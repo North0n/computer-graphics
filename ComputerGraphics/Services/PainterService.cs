@@ -8,9 +8,9 @@ using ComputerGraphics.models;
 
 namespace ComputerGraphics.Services;
 
-public class PainterService
+public static class PainterService
 {
-    private void DrawLine(float x0, float y0, float x1, float y1, byte r, byte g, byte b, Bgra32Bitmap bitmap)
+    private static void DrawLine(float x0, float y0, float x1, float y1, byte r, byte g, byte b, Bgra32Bitmap bitmap)
     {
         // ReSharper disable InconsistentNaming
         var x0i = (int)Math.Round(x0, MidpointRounding.AwayFromZero);
@@ -36,7 +36,7 @@ public class PainterService
         }
     }
 
-    public Bgra32Bitmap DrawModel(Vector4[] vertexes, List<List<int>> faces, int width, int height)
+    public static Bgra32Bitmap DrawModel(Vector4[] vertexes, List<List<int>> faces, int width, int height)
     {
         Bgra32Bitmap bitmap = new(width, height);
         bitmap.Source.Lock();
