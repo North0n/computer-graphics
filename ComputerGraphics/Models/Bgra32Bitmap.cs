@@ -8,17 +8,18 @@ namespace ComputerGraphics.models
         public Bgra32Bitmap(int pixelWidth, int pixelHeight)
         {
             Source = new WriteableBitmap(pixelWidth, pixelHeight, 96, 96, PixelFormats.Bgra32, null);
-            BackBuffer = (byte*)Source.BackBuffer;
-            BackBufferStride = Source.BackBufferStride;
-            BytesPerPixel = Source.Format.BitsPerPixel / 8;
+            _backBuffer = (byte*)Source.BackBuffer;
+            _backBufferStride = Source.BackBufferStride;
+            _bytesPerPixel = Source.Format.BitsPerPixel / 8;
             PixelWidth = Source.PixelWidth;
             PixelHeight = Source.PixelHeight;
         }
 
-        private byte* BackBuffer { get; }
-        private int BackBufferStride { get; }
-        private int BytesPerPixel { get; }
-        public WriteableBitmap Source { get; set; }
+        private readonly byte* _backBuffer;
+        private readonly int _backBufferStride;
+        private readonly int _bytesPerPixel;
+
+        public WriteableBitmap Source { get; }
         public int PixelWidth { get; }
         public int PixelHeight { get; }
 
@@ -27,7 +28,7 @@ namespace ComputerGraphics.models
             if (x <= 0 || x >= PixelWidth || y <= 0 || y >= PixelHeight)
                 return;
 
-            var address = BackBuffer + y * BackBufferStride + x * BytesPerPixel;
+            var address = _backBuffer + y * _backBufferStride + x * _bytesPerPixel;
             address[0] = b;
             address[1] = g;
             address[2] = r;
