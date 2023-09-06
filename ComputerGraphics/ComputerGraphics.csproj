@@ -8,9 +8,4 @@
         <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     </PropertyGroup>
 
-
-    <ItemGroup>
-      <Folder Include="services\" />
-    </ItemGroup>
-
 </Project>
