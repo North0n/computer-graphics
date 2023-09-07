@@ -5,6 +5,7 @@ using System.Numerics;
 using System.Threading.Tasks;
 using System.Windows;
 using ComputerGraphics.models;
+using ComputerGraphics.Models;
 
 namespace ComputerGraphics.Services;
 
@@ -58,5 +59,63 @@ public static class PainterService
         bitmap.Source.AddDirtyRect(new Int32Rect(0, 0, bitmap.PixelWidth, bitmap.PixelHeight));
         bitmap.Source.Unlock();
         return bitmap;
+    }
+
+    private static void DrawCircle(int x, int y, int radius, byte r, byte g, byte b, Bgra32Bitmap bitmap)
+    {
+        for (int i = 0; i <= radius * 2; i++)
+        {
+            for (int j = 0; j <= radius * 2; j++)
+            {
+                int dx = i - radius;
+                int dy = j - radius;
+                if (dx * dx + dy * dy <= radius * radius)
+                {
+                    int pixelX = x - radius + i;
+                    int pixelY = y - radius + j;
+                    if (pixelX >= 0 && pixelX < bitmap.PixelWidth && pixelY >= 0 && pixelY < bitmap.PixelHeight)
+                    {
+                        bitmap.SetPixel(pixelX, pixelY, r, g, b);
+                    }
+                }
+            }
+        }
+    }
+
+    public static void AddMinimapToBitmap(ImageInfo positions, Bgra32Bitmap bitmap)
+    {
+        var mapHeight = 300;
+        var mapWidth = 300;
+        var borderDistance = 10;
+
+        var mapX = bitmap.PixelWidth - mapWidth - borderDistance;
+        var mapY = borderDistance;
+
+        var startX = mapX + mapWidth / 2;
+        var startY = mapY + mapHeight / 2;
+
+        var pixelsInHorizontalAxis = 4000;
+        var pixelsInVerticalAxis = 4000;
+        
+        var horizontalProportion = (float)mapWidth / pixelsInHorizontalAxis;
+        var verticalProportion = (float)mapHeight / pixelsInVerticalAxis;
+
+        var objectX = (int)Math.Round(startX + (float)horizontalProportion * positions.PositionX);
+        var objectY = (int)Math.Round(startY + (float)verticalProportion * positions.PositionZ);
+
+        var cameraX = (int)Math.Round(startX + (float)horizontalProportion * positions.CameraPosition.X);
+        var cameraY = (int)Math.Round(startY + (float)verticalProportion * positions.CameraPosition.Z);
+
+        DrawLine(mapX, mapY, mapX + mapWidth, mapY, 0, 0, 0, bitmap); // top left to top right
+        DrawLine(mapX + mapWidth, mapY, mapX + mapWidth, mapY + mapHeight, 0, 0, 0, bitmap); // top right to bottom right
+        DrawLine(mapX + mapWidth, mapY + mapHeight, mapX, mapY + mapHeight, 0, 0, 0, bitmap); // bottom right to bottom left
+        DrawLine(mapX, mapY + mapHeight, mapX, mapY, 0, 0, 0, bitmap); // bottom left to top left
+
+        // cross
+        DrawLine(mapX + mapWidth / 2, mapY, mapX + mapWidth / 2, mapY + mapHeight, 0, 0, 0, bitmap);
+        DrawLine(mapX, mapY + mapHeight / 2, mapX + mapWidth, mapY + mapHeight / 2, 0, 0, 0, bitmap);
+
+        DrawCircle(objectX, objectY, 5, 255, 0, 0, bitmap);
+        DrawCircle(cameraX, cameraY, 5, 0, 255, 0, bitmap);
     }
 }

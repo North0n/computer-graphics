@@ -15,7 +15,7 @@ namespace ComputerGraphics;
 public partial class MainWindow
 {
     private readonly ImageInfo _positions = new()
-        { PositionZ = -900, CameraTarget = new Vector3(0, 0, -900), CamUp = new Vector3(0, 1, 0) };
+        { PositionZ = 0, CameraTarget = new Vector3(0, 0, 0), CameraPosition = new Vector3(0, 0, 900), CamUp = new Vector3(0, 1, 0) };
 
     private List<List<int>> _faces;
 
@@ -32,10 +32,9 @@ public partial class MainWindow
 
     private void Draw()
     {
-        var bitmap =
-            PainterService.DrawModel(
-                VertexTransformer.TransformVertexes(_positions, Grid.ActualWidth, Grid.ActualHeight).ToArray(), _faces,
-                (int)Grid.ActualWidth, (int)Grid.ActualHeight);
+        var vertexes = VertexTransformer.TransformVertexes(_positions, Grid.ActualWidth, Grid.ActualHeight).ToArray();
+        var bitmap = PainterService.DrawModel(vertexes, _faces, (int)Grid.ActualWidth, (int)Grid.ActualHeight);
+        PainterService.AddMinimapToBitmap(_positions, bitmap);
         Image.Source = bitmap.Source;
     }
 
