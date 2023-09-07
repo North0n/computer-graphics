@@ -48,14 +48,8 @@ public static class PainterService
                 var face = faces[j];
                 for (var i = 0; i < face.Count; i++)
                 {
-                    var offset = new Vector3((float)width / 2, (float)((float)height / 1.1), 0);
-
-                    var vertex1 = vertexes[face[i]];
-                    var vertex2 = vertexes[face[(i + 1) % face.Count]];
-                    var a = new Vector3(vertex1.X, vertex1.Y, vertex1.Z);
-                    var b = new Vector3(vertex2.X, vertex2.Y, vertex2.Z);
-                    a = offset * 1 * a * new Vector3(1, -1, 1) + offset;
-                    b = offset * 1 * b * new Vector3(1, -1, 1) + offset;
+                    var a = vertexes[face[i]];
+                    var b = vertexes[face[(i + 1) % face.Count]];
                     DrawLine(a.X, a.Y, b.X, b.Y, 0, 0, 0, bitmap);
                 }
             }
