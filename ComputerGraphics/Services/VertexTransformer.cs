@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Threading.Tasks;
+using ComputerGraphics.extensions;
 
 namespace ComputerGraphics.Services
 {
@@ -17,6 +18,8 @@ namespace ComputerGraphics.Services
         {
             const float xMin = 0;
             const float yMin = 0;
+            const float minDepth = 0;
+            const float maxDepth = 1;
 
             var result = new Vector4[info.Vertexes.Count];
 
@@ -26,12 +29,8 @@ namespace ComputerGraphics.Services
             var viewMatrix = Matrix4x4.CreateLookAt(info.CameraPosition, info.CameraTarget, info.CamUp);
             var projectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(FieldOfView, (float)(gridWidth / gridHeight),
                 NearPlaneDistance, FarPlaneDistance);
-
-
-            var viewPortMatrix = new Matrix4x4((float)gridWidth / 2, 0, 0, 0,
-                0, -((float)gridHeight / 2), 0, 0,
-                0, 0, 1024, 0,
-                xMin + (float)gridWidth / 2, yMin + (float)gridHeight / 2, 0, 1);
+            var viewPortMatrix = Matrix4x4Extension.CreateViewportLeftHanded(xMin, yMin, (float)gridWidth,
+                (float)gridHeight, minDepth, maxDepth);
 
             var matrix = rotationMatrix * translationMatrix * viewMatrix * projectionMatrix * viewPortMatrix;
             Parallel.ForEach(Partitioner.Create(0, info.Vertexes.Count), range =>
