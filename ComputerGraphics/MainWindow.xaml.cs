@@ -59,11 +59,11 @@ public partial class MainWindow
                 break;
             case Key.W:
                 _positions.CameraPosition =
-                    _positions.CameraPosition with { Y = _positions.CameraPosition.Y + moveSpeed };
+                    _positions.CameraPosition with { Z = _positions.CameraPosition.Z - moveSpeedZ };
                 break;
             case Key.S:
                 _positions.CameraPosition =
-                    _positions.CameraPosition with { Y = _positions.CameraPosition.Y - moveSpeed };
+                    _positions.CameraPosition with { Z = _positions.CameraPosition.Z + moveSpeedZ };
                 break;
             case Key.A:
                 _positions.CameraPosition =
@@ -75,11 +75,11 @@ public partial class MainWindow
                 break;
             case Key.Q:
                 _positions.CameraPosition =
-                    _positions.CameraPosition with { Z = _positions.CameraPosition.Z - moveSpeedZ };
+                    _positions.CameraPosition with { Y = _positions.CameraPosition.Y + moveSpeed };
                 break;
             case Key.E:
                 _positions.CameraPosition =
-                    _positions.CameraPosition with { Z = _positions.CameraPosition.Z + moveSpeedZ };
+                    _positions.CameraPosition with { Y = _positions.CameraPosition.Y - moveSpeed };
                 break;
             case Key.Z:
                 _positions.PositionX += moveSpeed;
