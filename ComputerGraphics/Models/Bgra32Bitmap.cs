@@ -1,7 +1,7 @@
 ﻿using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
-namespace ComputerGraphics.models
+namespace ComputerGraphics.Models
 {
     public unsafe class Bgra32Bitmap
     {

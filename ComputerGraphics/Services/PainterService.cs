@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Numerics;
 using System.Threading.Tasks;
 using System.Windows;
-using ComputerGraphics.models;
 using ComputerGraphics.Models;
 
 namespace ComputerGraphics.Services;
