@@ -12,15 +12,11 @@ namespace ComputerGraphics;
 /// <summary>
 /// Interaction logic for MainWindow.xaml
 /// </summary>
-public partial class MainWindow : Window
+public partial class MainWindow
 {
-    private float PositionX { get; set; }
-    private float PositionY { get; set; }
-    private float PositionZ { get; set; } = -70;
-    private float RotationX { get; set; }
-    private float RotationY { get; set; }
+    private readonly ImageInfo _positions = new()
+        { PositionZ = -900, CameraTarget = new Vector3(0, 0, -900), CamUp = new Vector3(0, 1, 0) };
 
-    private List<Vector3> _vertexes;
     private List<List<int>> _faces;
 
     public MainWindow()
@@ -30,17 +26,16 @@ public partial class MainWindow : Window
 
     private void OnWindowLoaded(object sender, RoutedEventArgs e)
     {
-        (_vertexes, _faces) = ObjFileParser.Parse(File.ReadLines("amogus.obj"));
+        (_positions.Vertexes, _faces) = ObjFileParser.Parse(File.ReadLines("amogus.obj"));
         Draw();
     }
 
     private void Draw()
     {
-        var bitmap = PainterService.DrawModel(
-            VertexTransformer.TransformVertexes(
-                new ImageInfo(PositionX, PositionY, PositionZ, RotationX, RotationY, _vertexes),
-                Grid.ActualWidth, Grid.ActualHeight).ToArray(), _faces,
-            (int)Grid.ActualWidth, (int)Grid.ActualHeight);
+        var bitmap =
+            PainterService.DrawModel(
+                VertexTransformer.TransformVertexes(_positions, Grid.ActualWidth, Grid.ActualHeight).ToArray(), _faces,
+                (int)Grid.ActualWidth, (int)Grid.ActualHeight);
         Image.Source = bitmap.Source;
     }
 
@@ -52,44 +47,48 @@ public partial class MainWindow : Window
         switch (e.Key)
         {
             case Key.Left:
-                RotationY -= rotationSpeed;
+                _positions.RotationY -= rotationSpeed;
                 break;
             case Key.Right:
-                RotationY += rotationSpeed;
+                _positions.RotationY += rotationSpeed;
                 break;
             case Key.Up:
-                RotationX -= rotationSpeed;
+                _positions.RotationX -= rotationSpeed;
                 break;
             case Key.Down:
-                RotationX += rotationSpeed;
+                _positions.RotationX += rotationSpeed;
                 break;
             case Key.W:
-                PositionY += moveSpeed;
+                _positions.CameraPosition =
+                    _positions.CameraPosition with { Y = _positions.CameraPosition.Y + moveSpeed };
                 break;
             case Key.S:
-                PositionY -= moveSpeed;
+                _positions.CameraPosition =
+                    _positions.CameraPosition with { Y = _positions.CameraPosition.Y - moveSpeed };
                 break;
             case Key.A:
-                PositionX -= moveSpeed;
+                _positions.CameraPosition =
+                    _positions.CameraPosition with { X = _positions.CameraPosition.X - moveSpeed };
                 break;
             case Key.D:
-                PositionX += moveSpeed;
+                _positions.CameraPosition =
+                    _positions.CameraPosition with { X = _positions.CameraPosition.X + moveSpeed };
                 break;
             case Key.Q:
-                PositionZ -= moveSpeedZ;
+                _positions.CameraPosition =
+                    _positions.CameraPosition with { Z = _positions.CameraPosition.Z - moveSpeedZ };
                 break;
             case Key.E:
-                PositionZ += moveSpeedZ;
+                _positions.CameraPosition =
+                    _positions.CameraPosition with { Z = _positions.CameraPosition.Z + moveSpeedZ };
                 break;
             case Key.Z:
-                RotationY -= rotationSpeed;
-                PositionX -= moveSpeed;
-                RotationX -= rotationSpeed;
+                _positions.PositionX += moveSpeed;
+                _positions.CameraTarget = new Vector3(_positions.PositionX, _positions.PositionY, _positions.PositionZ);
                 break;
             case Key.C:
-                RotationY += rotationSpeed;
-                PositionX += moveSpeed;
-                RotationX += rotationSpeed;
+                _positions.PositionX -= moveSpeed;
+                _positions.CameraTarget = new Vector3(_positions.PositionX, _positions.PositionY, _positions.PositionZ);
                 break;
         }
 
