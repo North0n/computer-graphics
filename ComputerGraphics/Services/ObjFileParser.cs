@@ -8,7 +8,7 @@ namespace ComputerGraphics.Services
 {
     public static class ObjFileParser
     {
-        public static ObjFileParseResult Parse(List<string> fileContent)
+        public static ObjFileParseResult Parse(IEnumerable<string> fileContent)
         {
             var vertexes = new List<Vector3>();
             var faces = new List<List<int>>();
