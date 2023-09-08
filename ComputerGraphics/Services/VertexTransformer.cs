@@ -32,13 +32,14 @@ namespace ComputerGraphics.Services
             var viewPortMatrix = Matrix4x4Extension.CreateViewportLeftHanded(xMin, yMin, (float)gridWidth,
                 (float)gridHeight, minDepth, maxDepth);
 
-            var matrix = rotationMatrix * translationMatrix * viewMatrix * projectionMatrix * viewPortMatrix;
+            var matrix = rotationMatrix * translationMatrix * viewMatrix * projectionMatrix;
             Parallel.ForEach(Partitioner.Create(0, info.Vertexes.Count), range =>
             {
                 for (var i = range.Item1; i < range.Item2; ++i)
                 {
                     result[i] = Vector4.Transform(info.Vertexes[i], matrix);
                     result[i] /= result[i].W;
+                    result[i] = Vector4.Transform(result[i], viewPortMatrix);
                 }
             });
             return result;
