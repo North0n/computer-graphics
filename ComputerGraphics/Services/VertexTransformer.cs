@@ -26,6 +26,8 @@ namespace ComputerGraphics.Services
             var translationMatrix = Matrix4x4.CreateTranslation(info.PositionX, info.PositionY, info.PositionZ);
             var rotationMatrix = Matrix4x4.CreateRotationX(info.RotationX) * Matrix4x4.CreateRotationY(info.RotationY);
 
+            // TODO If cam is right above or below target, than it doesn't see target, because Vector3.Normalize(info.CameraTarget - info.CameraPosition) == -info.CamUp;
+            // How to fix that?
             var viewMatrix = Matrix4x4.CreateLookAt(info.CameraPosition, info.CameraTarget, info.CamUp);
             var projectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(FieldOfView, (float)(gridWidth / gridHeight),
                 NearPlaneDistance, FarPlaneDistance);
