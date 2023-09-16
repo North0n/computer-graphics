@@ -121,36 +121,35 @@ public static class PainterService
 
     public static void AddMinimapToBitmap(ImageInfo positions, Bgra32Bitmap bitmap)
     {
-        var mapHeight = 300;
-        var mapWidth = 300;
-        var borderDistance = 10;
+        const int mapHeight = 300;
+        const int mapWidth = 300;
+        const int borderDistance = 10;
 
         var mapX = bitmap.PixelWidth - mapWidth - borderDistance;
-        var mapY = borderDistance;
 
         var startX = mapX + mapWidth / 2;
-        var startY = mapY + mapHeight / 2;
+        const int startY = borderDistance + mapHeight / 2;
 
-        var pixelsInHorizontalAxis = 4000;
-        var pixelsInVerticalAxis = 4000;
+        const int pixelsInHorizontalAxis = 4000;
+        const int pixelsInVerticalAxis = 4000;
         
-        var horizontalProportion = (float)mapWidth / pixelsInHorizontalAxis;
-        var verticalProportion = (float)mapHeight / pixelsInVerticalAxis;
+        const float horizontalProportion = (float)mapWidth / pixelsInHorizontalAxis;
+        const float verticalProportion = (float)mapHeight / pixelsInVerticalAxis;
 
-        var objectX = (int)Math.Round(startX + (float)horizontalProportion * positions.PositionX);
-        var objectY = (int)Math.Round(startY + (float)verticalProportion * positions.PositionZ);
+        var objectX = (int)Math.Round(startX + horizontalProportion * positions.PositionX);
+        var objectY = (int)Math.Round(startY + verticalProportion * positions.PositionZ);
 
-        var cameraX = (int)Math.Round(startX + (float)horizontalProportion * positions.CameraPosition.X);
-        var cameraY = (int)Math.Round(startY + (float)verticalProportion * positions.CameraPosition.Z);
+        var cameraX = (int)Math.Round(startX + horizontalProportion * positions.CameraPosition.X);
+        var cameraY = (int)Math.Round(startY + verticalProportion * positions.CameraPosition.Z);
 
-        DrawLine(mapX, mapY, mapX + mapWidth, mapY, 0, 0, 0, bitmap); // top left to top right
-        DrawLine(mapX + mapWidth, mapY, mapX + mapWidth, mapY + mapHeight, 0, 0, 0, bitmap); // top right to bottom right
-        DrawLine(mapX + mapWidth, mapY + mapHeight, mapX, mapY + mapHeight, 0, 0, 0, bitmap); // bottom right to bottom left
-        DrawLine(mapX, mapY + mapHeight, mapX, mapY, 0, 0, 0, bitmap); // bottom left to top left
+        DrawLine(mapX, borderDistance, mapX + mapWidth, borderDistance, 0, 0, 0, bitmap); // top left to top right
+        DrawLine(mapX + mapWidth, borderDistance, mapX + mapWidth, borderDistance + mapHeight, 0, 0, 0, bitmap); // top right to bottom right
+        DrawLine(mapX + mapWidth, borderDistance + mapHeight, mapX, borderDistance + mapHeight, 0, 0, 0, bitmap); // bottom right to bottom left
+        DrawLine(mapX, borderDistance + mapHeight, mapX, borderDistance, 0, 0, 0, bitmap); // bottom left to top left
 
         // cross
-        DrawLine(mapX + mapWidth / 2, mapY, mapX + mapWidth / 2, mapY + mapHeight, 0, 0, 0, bitmap);
-        DrawLine(mapX, mapY + mapHeight / 2, mapX + mapWidth, mapY + mapHeight / 2, 0, 0, 0, bitmap);
+        DrawLine(mapX + mapWidth / 2.0f, borderDistance, mapX + mapWidth / 2.0f, borderDistance + mapHeight, 0, 0, 0, bitmap);
+        DrawLine(mapX, borderDistance + mapHeight / 2.0f, mapX + mapWidth, borderDistance + mapHeight / 2.0f, 0, 0, 0, bitmap);
 
         DrawCircle(objectX, objectY, 5, 255, 0, 0, bitmap);
         DrawCircle(cameraX, cameraY, 5, 0, 255, 0, bitmap);
