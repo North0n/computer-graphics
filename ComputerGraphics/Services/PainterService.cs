@@ -47,8 +47,7 @@ public static class PainterService
         var minY = Round(vertexes.Min(v => v.Y));
         var maxY = Round(vertexes.Max(v => v.Y));
 
-        var intersections = new PriorityQueue<IntVector2D, IntVector2D>();
-        intersections.EnsureCapacity((maxY - minY) * vertexes.Count / 2);
+        var intersections = new PriorityQueue<IntVector2D, IntVector2D>((maxY - minY) * vertexes.Count / 2);
         for (var y = minY; y <= maxY; ++y)
         {
             for (var j = 0; j < vertexes.Count; j++)
