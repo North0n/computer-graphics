@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
 using System.Windows;
@@ -10,13 +11,18 @@ namespace ComputerGraphics.Services;
 
 public static class PainterService
 {
+    private static int Round(float x)
+    {
+        return (int)Math.Round(x, MidpointRounding.AwayFromZero);
+    }
+
     private static void DrawLine(float x0, float y0, float x1, float y1, byte r, byte g, byte b, Bgra32Bitmap bitmap)
     {
         // ReSharper disable InconsistentNaming
-        var x0i = (int)Math.Round(x0, MidpointRounding.AwayFromZero);
-        var y0i = (int)Math.Round(y0, MidpointRounding.AwayFromZero);
-        var x1i = (int)Math.Round(x1, MidpointRounding.AwayFromZero);
-        var y1i = (int)Math.Round(y1, MidpointRounding.AwayFromZero);
+        var x0i = Round(x0);
+        var y0i = Round(y0);
+        var x1i = Round(x1);
+        var y1i = Round(y1);
         // ReSharper restore InconsistentNaming
         var steps = Math.Max(Math.Abs(x1i - x0i), Math.Abs(y1i - y0i));
         if (steps <= 0)
@@ -28,11 +34,47 @@ public static class PainterService
         float y = y0i;
         for (var i = 0; i < steps; ++i)
         {
-            var xi = (int)Math.Round(x, MidpointRounding.AwayFromZero);
-            var yi = (int)Math.Round(y, MidpointRounding.AwayFromZero);
+            var xi = Round(x);
+            var yi = Round(y);
             bitmap.SetPixel(xi, yi, r, g, b);
             x += dx;
             y += dy;
+        }
+    }
+
+    private static void DrawPolygon(IReadOnlyList<Vector4> vertexes, Bgra32Bitmap bitmap)
+    {
+        var minY = Round(vertexes.Min(v => v.Y));
+        var maxY = Round(vertexes.Max(v => v.Y));
+
+        var intersections = new PriorityQueue<IntVector2D, IntVector2D>((maxY - minY) * vertexes.Count / 2);
+        for (var y = minY; y <= maxY; ++y)
+        {
+            for (var j = 0; j < vertexes.Count; j++)
+            {
+                var vertex = vertexes[j];
+                var nextVertex = vertexes[(j + 1) % vertexes.Count];
+
+                var x = (y - vertex.Y) / (nextVertex.Y - vertex.Y) * (nextVertex.X - vertex.X) + vertex.X;
+                // Don't add intersection point if it is not inside polygon
+                if (x < Math.Min(vertex.X, nextVertex.X) || x > Math.Max(vertex.X, nextVertex.X))
+                    continue;
+
+                var vec2 = new IntVector2D(Round(x), y);
+                intersections.Enqueue(vec2, vec2);
+            }
+        }
+
+        var (r, g, b) = ((byte)Random.Shared.Next(255), (byte)Random.Shared.Next(255), (byte)Random.Shared.Next(255));
+        while (intersections.Count >= 2)
+        {
+            var vec1 = intersections.Dequeue();
+            var vec2 = intersections.Dequeue();
+
+            for (var x = vec1.X; x <= vec2.X; ++x)
+            {
+                bitmap.SetPixel(x, vec1.Y, r, g, b);
+            }
         }
     }
 
@@ -46,12 +88,7 @@ public static class PainterService
             for (var j = range.Item1; j < range.Item2; ++j)
             {
                 var face = faces[j];
-                for (var i = 0; i < face.Count; i++)
-                {
-                    var a = vertexes[face[i]];
-                    var b = vertexes[face[(i + 1) % face.Count]];
-                    DrawLine(a.X, a.Y, b.X, b.Y, 0, 0, 0, bitmap);
-                }
+                DrawPolygon(face.ConvertAll(idx => vertexes[idx]), bitmap);
             }
         });
 
@@ -83,36 +120,35 @@ public static class PainterService
 
     public static void AddMinimapToBitmap(ImageInfo positions, Bgra32Bitmap bitmap)
     {
-        var mapHeight = 300;
-        var mapWidth = 300;
-        var borderDistance = 10;
+        const int mapHeight = 300;
+        const int mapWidth = 300;
+        const int borderDistance = 10;
 
         var mapX = bitmap.PixelWidth - mapWidth - borderDistance;
-        var mapY = borderDistance;
 
         var startX = mapX + mapWidth / 2;
-        var startY = mapY + mapHeight / 2;
+        const int startY = borderDistance + mapHeight / 2;
 
-        var pixelsInHorizontalAxis = 4000;
-        var pixelsInVerticalAxis = 4000;
+        const int pixelsInHorizontalAxis = 4000;
+        const int pixelsInVerticalAxis = 4000;
         
-        var horizontalProportion = (float)mapWidth / pixelsInHorizontalAxis;
-        var verticalProportion = (float)mapHeight / pixelsInVerticalAxis;
+        const float horizontalProportion = (float)mapWidth / pixelsInHorizontalAxis;
+        const float verticalProportion = (float)mapHeight / pixelsInVerticalAxis;
 
-        var objectX = (int)Math.Round(startX + (float)horizontalProportion * positions.PositionX);
-        var objectY = (int)Math.Round(startY + (float)verticalProportion * positions.PositionZ);
+        var objectX = (int)Math.Round(startX + horizontalProportion * positions.PositionX);
+        var objectY = (int)Math.Round(startY + verticalProportion * positions.PositionZ);
 
-        var cameraX = (int)Math.Round(startX + (float)horizontalProportion * positions.CameraPosition.X);
-        var cameraY = (int)Math.Round(startY + (float)verticalProportion * positions.CameraPosition.Z);
+        var cameraX = (int)Math.Round(startX + horizontalProportion * positions.CameraPosition.X);
+        var cameraY = (int)Math.Round(startY + verticalProportion * positions.CameraPosition.Z);
 
-        DrawLine(mapX, mapY, mapX + mapWidth, mapY, 0, 0, 0, bitmap); // top left to top right
-        DrawLine(mapX + mapWidth, mapY, mapX + mapWidth, mapY + mapHeight, 0, 0, 0, bitmap); // top right to bottom right
-        DrawLine(mapX + mapWidth, mapY + mapHeight, mapX, mapY + mapHeight, 0, 0, 0, bitmap); // bottom right to bottom left
-        DrawLine(mapX, mapY + mapHeight, mapX, mapY, 0, 0, 0, bitmap); // bottom left to top left
+        DrawLine(mapX, borderDistance, mapX + mapWidth, borderDistance, 0, 0, 0, bitmap); // top left to top right
+        DrawLine(mapX + mapWidth, borderDistance, mapX + mapWidth, borderDistance + mapHeight, 0, 0, 0, bitmap); // top right to bottom right
+        DrawLine(mapX + mapWidth, borderDistance + mapHeight, mapX, borderDistance + mapHeight, 0, 0, 0, bitmap); // bottom right to bottom left
+        DrawLine(mapX, borderDistance + mapHeight, mapX, borderDistance, 0, 0, 0, bitmap); // bottom left to top left
 
         // cross
-        DrawLine(mapX + mapWidth / 2, mapY, mapX + mapWidth / 2, mapY + mapHeight, 0, 0, 0, bitmap);
-        DrawLine(mapX, mapY + mapHeight / 2, mapX + mapWidth, mapY + mapHeight / 2, 0, 0, 0, bitmap);
+        DrawLine(mapX + mapWidth / 2.0f, borderDistance, mapX + mapWidth / 2.0f, borderDistance + mapHeight, 0, 0, 0, bitmap);
+        DrawLine(mapX, borderDistance + mapHeight / 2.0f, mapX + mapWidth, borderDistance + mapHeight / 2.0f, 0, 0, 0, bitmap);
 
         DrawCircle(objectX, objectY, 5, 255, 0, 0, bitmap);
         DrawCircle(cameraX, cameraY, 5, 0, 255, 0, bitmap);
