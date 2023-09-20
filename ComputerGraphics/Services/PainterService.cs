@@ -75,6 +75,7 @@ public static class PainterService
         }
 
         var intensity = normals.ConvertAll(n => Vector3.Dot(n, -lightDirection)).Average();
+        // intensity = Math.Abs(intensity);
         if (intensity < 0)
             return;
 
@@ -99,7 +100,7 @@ public static class PainterService
     }
 
     public static Bgra32Bitmap DrawModel(Vector4[] vertexes, List<List<int>> faces, int width, int height,
-        float[,] zBuffer, List<Vector3> normals, List<List<int>> normalIndexes, Vector3 lightDirection)
+        float[,] zBuffer, Vector3[] normals, List<List<int>> normalIndexes, Vector3 lightDirection)
     {
         for (var i = 0; i < width; ++i)
         {

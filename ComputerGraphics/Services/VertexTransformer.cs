@@ -65,5 +65,24 @@ namespace ComputerGraphics.Services
             });
             return result;
         }
+
+        public static IEnumerable<Vector3> TransformNormals(List<Vector3> normals, ImageInfo info)
+        {
+            var result = new Vector3[normals.Count];
+
+            var translationMatrix = Matrix4x4.CreateTranslation(info.PositionX, info.PositionY, info.PositionZ);
+            var rotationMatrix = Matrix4x4.CreateRotationX(info.RotationX) * Matrix4x4.CreateRotationY(info.RotationY);
+
+            var matrix = rotationMatrix * translationMatrix;
+            Parallel.ForEach(Partitioner.Create(0, normals.Count), range =>
+            {
+                for (var i = range.Item1; i < range.Item2; ++i)
+                {
+                    var vec = Vector4.Transform(normals[i], matrix);
+                    result[i] = new Vector3(vec.X, vec.Y, vec.Z);
+                }
+            });
+            return result;
+        }
     }
 }

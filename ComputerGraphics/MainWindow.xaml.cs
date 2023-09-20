@@ -49,8 +49,9 @@ public partial class MainWindow
     private void Draw()
     {
         var vertexes = VertexTransformer.TransformVertexes(_positions, Grid.ActualWidth, Grid.ActualHeight).ToArray();
+        var normals = VertexTransformer.TransformNormals(_normals, _positions);
         var bitmap = PainterService.DrawModel(vertexes, _faces, (int)Grid.ActualWidth, (int)Grid.ActualHeight, _zBuffer,
-            _normals, _normalIndexes, Vector3.Normalize(_positions.CameraPosition - _positions.CameraTarget));
+            normals.ToArray(), _normalIndexes, Vector3.Normalize(_positions.CameraPosition - _positions.CameraTarget));
         PainterService.AddMinimapToBitmap(_positions, bitmap);
         Image.Source = bitmap.Source;
     }
