@@ -30,9 +30,12 @@ public partial class MainWindow
     private const float MoveSpeed = 10f;
     private const float MoveSpeedZ = 10f;
 
+    private float[,] _zBuffer;
+
     public MainWindow()
     {
         InitializeComponent();
+        _zBuffer = new float[(int)Grid.ActualWidth, (int)Grid.ActualHeight];
     }
 
     private void OnWindowLoaded(object sender, RoutedEventArgs e)
@@ -44,9 +47,15 @@ public partial class MainWindow
     private void Draw()
     {
         var vertexes = VertexTransformer.TransformVertexes(_positions, Grid.ActualWidth, Grid.ActualHeight).ToArray();
-        var bitmap = PainterService.DrawModel(vertexes, _faces, (int)Grid.ActualWidth, (int)Grid.ActualHeight);
+        var bitmap =
+            PainterService.DrawModel(vertexes, _faces, (int)Grid.ActualWidth, (int)Grid.ActualHeight, _zBuffer);
         PainterService.AddMinimapToBitmap(_positions, bitmap);
         Image.Source = bitmap.Source;
+    }
+
+    private void OnWindowSizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        _zBuffer = new float[(int)e.NewSize.Width, (int)e.NewSize.Height];
     }
 
     private void OnWindowKeydown(object sender, KeyEventArgs e)

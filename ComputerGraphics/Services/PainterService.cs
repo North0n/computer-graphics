@@ -42,7 +42,7 @@ public static class PainterService
         }
     }
 
-    private static void DrawPolygon(IReadOnlyList<Vector4> vertexes, Bgra32Bitmap bitmap)
+    private static void DrawPolygon(IReadOnlyList<Vector4> vertexes, Bgra32Bitmap bitmap, float[,] zBuffer)
     {
         var minY = Round(vertexes.Min(v => v.Y));
         var maxY = Round(vertexes.Max(v => v.Y));
@@ -67,7 +67,8 @@ public static class PainterService
                 if (x < Math.Min(vertex.X, nextVertex.X) || x > Math.Max(vertex.X, nextVertex.X))
                     continue;
 
-                var vec2 = new IntVector2D(Round(x), y);
+                var z = k * (nextVertex.Z - vertex.Z) + vertex.Z;
+                var vec2 = new IntVector2D(Round(x), y, z);
                 intersections.Enqueue(vec2, vec2);
             }
         }
@@ -80,13 +81,29 @@ public static class PainterService
 
             for (var x = vec1.X; x <= vec2.X; ++x)
             {
+                var k = vec2.X - vec1.X != 0 ? (float)(x - vec1.X) / (vec2.X - vec1.X) : float.MaxValue;
+
+                var z = k * (vec2.Z - vec1.Z) + vec1.Z;
+                if (zBuffer[x, vec1.Y] >= z)
+                    continue;
+
+                zBuffer[x, vec1.Y] = z;
                 bitmap.SetPixel(x, vec1.Y, r, g, b);
             }
         }
     }
 
-    public static Bgra32Bitmap DrawModel(Vector4[] vertexes, List<List<int>> faces, int width, int height)
+    public static Bgra32Bitmap DrawModel(Vector4[] vertexes, List<List<int>> faces, int width, int height,
+        float[,] zBuffer)
     {
+        for (var i = 0; i < width; ++i)
+        {
+            for (var j = 0; j < height; ++j)
+            {
+                zBuffer[i, j] = float.MinValue;
+            }
+        }
+
         Bgra32Bitmap bitmap = new(width, height);
         bitmap.Source.Lock();
 
@@ -95,7 +112,7 @@ public static class PainterService
             for (var j = range.Item1; j < range.Item2; ++j)
             {
                 var face = faces[j];
-                DrawPolygon(face.ConvertAll(idx => vertexes[idx]), bitmap);
+                DrawPolygon(face.ConvertAll(idx => vertexes[idx]), bitmap, zBuffer);
             }
         });
 

@@ -6,8 +6,8 @@
         mc:Ignorable="d"
         Title="MegaLab" Height="450" Width="800" WindowState="Maximized"
         Loaded="OnWindowLoaded" KeyDown="OnWindowKeydown" MouseMove="OnMouseMove" MouseDown="OnMouseDown"
-        MouseUp="OnMouseUp" MouseWheel="OnMouseWheel">
+        MouseUp="OnMouseUp" MouseWheel="OnMouseWheel" SizeChanged="OnWindowSizeChanged">
     <Grid x:Name="Grid">
-        <Image x:Name="Image" />
+        <Image x:Name="Image"/>
     </Grid>
 </Window>
