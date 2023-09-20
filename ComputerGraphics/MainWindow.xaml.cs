@@ -22,6 +22,8 @@ public partial class MainWindow
     };
 
     private List<List<int>> _faces;
+    private List<Vector3> _normals;
+    private List<List<int>> _normalIndexes;
 
     private bool _isMousePressed = false;
     private Point _pressPoint;
@@ -40,15 +42,15 @@ public partial class MainWindow
 
     private void OnWindowLoaded(object sender, RoutedEventArgs e)
     {
-        (_positions.Vertexes, _faces) = ObjFileParser.Parse(File.ReadLines("amogus.obj"));
+        (_positions.Vertexes, _faces, _normals, _normalIndexes) = ObjFileParser.Parse(File.ReadLines("amogus.obj"));
         Draw();
     }
 
     private void Draw()
     {
         var vertexes = VertexTransformer.TransformVertexes(_positions, Grid.ActualWidth, Grid.ActualHeight).ToArray();
-        var bitmap =
-            PainterService.DrawModel(vertexes, _faces, (int)Grid.ActualWidth, (int)Grid.ActualHeight, _zBuffer);
+        var bitmap = PainterService.DrawModel(vertexes, _faces, (int)Grid.ActualWidth, (int)Grid.ActualHeight, _zBuffer,
+            _normals, _normalIndexes, Vector3.Normalize(_positions.CameraPosition - _positions.CameraTarget));
         PainterService.AddMinimapToBitmap(_positions, bitmap);
         Image.Source = bitmap.Source;
     }

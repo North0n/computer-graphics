@@ -42,7 +42,8 @@ public static class PainterService
         }
     }
 
-    private static void DrawPolygon(IReadOnlyList<Vector4> vertexes, Bgra32Bitmap bitmap, float[,] zBuffer)
+    private static void DrawPolygon(IReadOnlyList<Vector4> vertexes, List<Vector3> normals, Bgra32Bitmap bitmap,
+        float[,] zBuffer, Vector3 lightDirection)
     {
         var minY = Round(vertexes.Min(v => v.Y));
         var maxY = Round(vertexes.Max(v => v.Y));
@@ -73,7 +74,11 @@ public static class PainterService
             }
         }
 
-        var (r, g, b) = ((byte)Random.Shared.Next(255), (byte)Random.Shared.Next(255), (byte)Random.Shared.Next(255));
+        var intensity = normals.ConvertAll(n => Vector3.Dot(n, -lightDirection)).Average();
+        if (intensity < 0)
+            return;
+
+        var (r, g, b) = ((byte)(intensity * 255), (byte)(intensity * 255), (byte)(intensity * 255));
         while (intersections.Count >= 2)
         {
             var vec1 = intersections.Dequeue();
@@ -94,7 +99,7 @@ public static class PainterService
     }
 
     public static Bgra32Bitmap DrawModel(Vector4[] vertexes, List<List<int>> faces, int width, int height,
-        float[,] zBuffer)
+        float[,] zBuffer, List<Vector3> normals, List<List<int>> normalIndexes, Vector3 lightDirection)
     {
         for (var i = 0; i < width; ++i)
         {
@@ -112,7 +117,9 @@ public static class PainterService
             for (var j = range.Item1; j < range.Item2; ++j)
             {
                 var face = faces[j];
-                DrawPolygon(face.ConvertAll(idx => vertexes[idx]), bitmap, zBuffer);
+                var curNormals = normalIndexes[j];
+                DrawPolygon(face.ConvertAll(idx => vertexes[idx]), curNormals.ConvertAll(idx => normals[idx]), bitmap,
+                    zBuffer, lightDirection);
             }
         });
 

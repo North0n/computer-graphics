@@ -3,5 +3,6 @@ using System.Numerics;
 
 namespace ComputerGraphics.Models
 {
-    public record ObjFileParseResult(List<Vector3> Vertexes, List<List<int>> Faces);
+    public record ObjFileParseResult(List<Vector3> Vertexes, List<List<int>> Faces, List<Vector3> Normals,
+        List<List<int>> NormalIndexes);
 }
