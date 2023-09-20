@@ -87,6 +87,12 @@ public static class PainterService
 
             for (var x = vec1.X; x <= vec2.X; ++x)
             {
+                if (x >= zBuffer.GetLength(0))
+                    break;
+
+                if (x <= 0 || vec1.Y <= 0 || vec1.Y >= zBuffer.GetLength(1))
+                    continue;
+
                 var k = vec2.X - vec1.X != 0 ? (float)(x - vec1.X) / (vec2.X - vec1.X) : float.MaxValue;
 
                 var z = k * (vec2.Z - vec1.Z) + vec1.Z;
