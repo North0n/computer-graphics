@@ -55,9 +55,33 @@ public static class PainterService
                 var vertex = vertexes[j];
                 var nextVertex = vertexes[(j + 1) % vertexes.Count];
 
-                var x = (y - vertex.Y) / (nextVertex.Y - vertex.Y) * (nextVertex.X - vertex.X) + vertex.X;
+                if (Math.Abs(nextVertex.Y - vertex.Y) < 0.01)
+                {
+                    var v1 = new IntVector2D(Round(vertex.X), Round(vertex.Y));
+                    intersections.Enqueue(v1, v1);
+                    var v2 = new IntVector2D(Round(nextVertex.X), Round(nextVertex.Y));
+                    intersections.Enqueue(v2, v2);
+                    continue;
+                }
+
+
+                var k = (nextVertex.Y - vertex.Y) / (nextVertex.X - vertex.X);
+                float x;
+                if (float.IsFinite(k))
+                {
+                    var yb = nextVertex.Y - k * nextVertex.X;
+                    x = (y - yb) / k;
+                }
+                else
+                {
+                    if (y < nextVertex.Y ^ y > vertex.Y)
+                        x = float.NaN;
+                    else
+                        x = vertex.X; // Если вершины по разные стороны от y, тогда есть пересечение
+                }
+                // var x = (y - vertex.Y) / (nextVertex.Y - vertex.Y) * (nextVertex.X - vertex.X) + vertex.X;
                 // Don't add intersection point if it is not inside polygon
-                if (x < Math.Min(vertex.X, nextVertex.X) || x > Math.Max(vertex.X, nextVertex.X))
+                if (float.IsNaN(x) || x < Math.Min(vertex.X, nextVertex.X) || x > Math.Max(vertex.X, nextVertex.X))
                     continue;
 
                 var vec2 = new IntVector2D(Round(x), y);
