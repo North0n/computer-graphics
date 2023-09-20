@@ -68,9 +68,11 @@ public static class PainterService
                 if (x < Math.Min(vertex.X, nextVertex.X) || x > Math.Max(vertex.X, nextVertex.X))
                     continue;
 
-                var z = k * (nextVertex.Z - vertex.Z) + vertex.Z;
-                var vec2 = new IntVector2D(Round(x), y, z);
-                intersections.Enqueue(vec2, vec2);
+                var len = Math.Sqrt(Math.Pow(vertex.X - nextVertex.X, 2) + Math.Pow(vertex.Y - nextVertex.Y, 2));
+                var curLen = Math.Sqrt(Math.Pow(vertex.X - x, 2) + Math.Pow(vertex.Y - y, 2));
+                var z = (float)(curLen / len * (nextVertex.Z - vertex.Z) + vertex.Z);
+                var vec = new IntVector2D(Round(x), y, z);
+                intersections.Enqueue(vec, vec);
             }
         }
 
@@ -79,7 +81,7 @@ public static class PainterService
         if (intensity < 0)
             return;
 
-        var (r, g, b) = ((byte)(intensity * 255), (byte)(intensity * 255), (byte)(intensity * 255));
+        var (r, g, b) = ((byte)(intensity * 200), (byte)(intensity * 200), (byte)(intensity * 200));
         while (intersections.Count >= 2)
         {
             var vec1 = intersections.Dequeue();
