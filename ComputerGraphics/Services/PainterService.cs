@@ -55,7 +55,14 @@ public static class PainterService
                 var vertex = vertexes[j];
                 var nextVertex = vertexes[(j + 1) % vertexes.Count];
 
-                var x = (y - vertex.Y) / (nextVertex.Y - vertex.Y) * (nextVertex.X - vertex.X) + vertex.X;
+                // If vertexes are on the one side of the line skip them
+                if (y < nextVertex.Y ^ y > vertex.Y)
+                    continue;
+
+                // Find intersection point
+                var k = (nextVertex.Y - vertex.Y) / (nextVertex.X - vertex.X);
+                var x = float.IsFinite(k) ? (y - (nextVertex.Y - k * nextVertex.X)) / k : vertex.X;
+
                 // Don't add intersection point if it is not inside polygon
                 if (x < Math.Min(vertex.X, nextVertex.X) || x > Math.Max(vertex.X, nextVertex.X))
                     continue;
