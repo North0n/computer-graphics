@@ -5,6 +5,7 @@ namespace ComputerGraphics.Models
 {
     public class ImageInfo
     {
+        // X - Distance to target, Y - Phi angle, Z - Zenith angle
         public Vector3 CameraPosition { get; set; }
         public Vector3 CameraTarget { get; set; }
         public Vector3 CamUp { get; set; }
