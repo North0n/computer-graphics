@@ -171,7 +171,7 @@ public static class PainterService
 
         const int pixelsInHorizontalAxis = 4000;
         const int pixelsInVerticalAxis = 4000;
-        
+
         const float horizontalProportion = (float)mapWidth / pixelsInHorizontalAxis;
         const float verticalProportion = (float)mapHeight / pixelsInVerticalAxis;
 
@@ -183,13 +183,17 @@ public static class PainterService
         var cameraY = (int)Math.Round(startY + verticalProportion * camPosition.Z);
 
         DrawLine(mapX, borderDistance, mapX + mapWidth, borderDistance, 0, 0, 0, bitmap); // top left to top right
-        DrawLine(mapX + mapWidth, borderDistance, mapX + mapWidth, borderDistance + mapHeight, 0, 0, 0, bitmap); // top right to bottom right
-        DrawLine(mapX + mapWidth, borderDistance + mapHeight, mapX, borderDistance + mapHeight, 0, 0, 0, bitmap); // bottom right to bottom left
+        DrawLine(mapX + mapWidth, borderDistance, mapX + mapWidth, borderDistance + mapHeight, 0, 0, 0,
+            bitmap); // top right to bottom right
+        DrawLine(mapX + mapWidth, borderDistance + mapHeight, mapX, borderDistance + mapHeight, 0, 0, 0,
+            bitmap); // bottom right to bottom left
         DrawLine(mapX, borderDistance + mapHeight, mapX, borderDistance, 0, 0, 0, bitmap); // bottom left to top left
 
         // cross
-        DrawLine(mapX + mapWidth / 2.0f, borderDistance, mapX + mapWidth / 2.0f, borderDistance + mapHeight, 0, 0, 0, bitmap);
-        DrawLine(mapX, borderDistance + mapHeight / 2.0f, mapX + mapWidth, borderDistance + mapHeight / 2.0f, 0, 0, 0, bitmap);
+        DrawLine(mapX + mapWidth / 2.0f, borderDistance, mapX + mapWidth / 2.0f, borderDistance + mapHeight, 0, 0, 0,
+            bitmap);
+        DrawLine(mapX, borderDistance + mapHeight / 2.0f, mapX + mapWidth, borderDistance + mapHeight / 2.0f, 0, 0, 0,
+            bitmap);
 
         DrawCircle(objectX, objectY, 5, 255, 0, 0, bitmap);
         DrawCircle(cameraX, cameraY, 5, 0, 255, 0, bitmap);
