@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
@@ -15,9 +16,19 @@ namespace ComputerGraphics;
 public partial class MainWindow
 {
     private readonly ImageInfo _positions = new()
-        { PositionZ = 0, CameraTarget = new Vector3(0, 0, 0), CameraPosition = new Vector3(0, 0, 900), CamUp = new Vector3(0, 1, 0) };
+    {
+        PositionZ = 0, CameraTarget = new Vector3(0, 0, 0), CameraPosition = new Vector3(900, 0, 0),
+        CamUp = new Vector3(0, 1, 0)
+    };
 
     private List<List<int>> _faces;
+
+    private bool _isMousePressed = false;
+    private Point _pressPoint;
+
+    private const float RotationSpeed = 0.1f;
+    private const float MoveSpeed = 10f;
+    private const float MoveSpeedZ = 10f;
 
     public MainWindow()
     {
@@ -40,57 +51,69 @@ public partial class MainWindow
 
     private void OnWindowKeydown(object sender, KeyEventArgs e)
     {
-        const float rotationSpeed = 0.1f;
-        const float moveSpeed = 10f;
-        const float moveSpeedZ = 10f;
         switch (e.Key)
         {
             case Key.Left:
-                _positions.RotationY -= rotationSpeed;
+                _positions.RotationY -= RotationSpeed;
                 break;
             case Key.Right:
-                _positions.RotationY += rotationSpeed;
+                _positions.RotationY += RotationSpeed;
                 break;
             case Key.Up:
-                _positions.RotationX -= rotationSpeed;
+                _positions.RotationX -= RotationSpeed;
                 break;
             case Key.Down:
-                _positions.RotationX += rotationSpeed;
-                break;
-            case Key.W:
-                _positions.CameraPosition =
-                    _positions.CameraPosition with { Z = _positions.CameraPosition.Z - moveSpeedZ };
-                break;
-            case Key.S:
-                _positions.CameraPosition =
-                    _positions.CameraPosition with { Z = _positions.CameraPosition.Z + moveSpeedZ };
-                break;
-            case Key.A:
-                _positions.CameraPosition =
-                    _positions.CameraPosition with { X = _positions.CameraPosition.X - moveSpeed };
-                break;
-            case Key.D:
-                _positions.CameraPosition =
-                    _positions.CameraPosition with { X = _positions.CameraPosition.X + moveSpeed };
-                break;
-            case Key.Q:
-                _positions.CameraPosition =
-                    _positions.CameraPosition with { Y = _positions.CameraPosition.Y + moveSpeed };
-                break;
-            case Key.E:
-                _positions.CameraPosition =
-                    _positions.CameraPosition with { Y = _positions.CameraPosition.Y - moveSpeed };
+                _positions.RotationX += RotationSpeed;
                 break;
             case Key.Z:
-                _positions.PositionX += moveSpeed;
+                _positions.PositionX += MoveSpeed;
                 _positions.CameraTarget = new Vector3(_positions.PositionX, _positions.PositionY, _positions.PositionZ);
                 break;
             case Key.C:
-                _positions.PositionX -= moveSpeed;
+                _positions.PositionX -= MoveSpeed;
                 _positions.CameraTarget = new Vector3(_positions.PositionX, _positions.PositionY, _positions.PositionZ);
                 break;
         }
 
+        Draw();
+    }
+
+    private void OnMouseMove(object sender, MouseEventArgs e)
+    {
+        if (!_isMousePressed)
+            return;
+
+        var position = e.GetPosition(Image);
+        var phiOffset = -(position.X - _pressPoint.X) * 0.005;
+        var zenithOffset = (position.Y - _pressPoint.Y) * 0.002;
+
+        _positions.CameraPosition =
+            _positions.CameraPosition with { Y = _positions.CameraPosition.Y + (float)phiOffset };
+
+        _positions.CameraPosition =
+            _positions.CameraPosition with
+            {
+                Z = (float)Math.Clamp(_positions.CameraPosition.Z + (float)zenithOffset, -Math.PI / 2, Math.PI / 2)
+            };
+
+        _pressPoint = position;
+        Draw();
+    }
+
+    private void OnMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        _isMousePressed = true;
+        _pressPoint = e.GetPosition(Image);
+    }
+
+    private void OnMouseUp(object sender, MouseButtonEventArgs e)
+    {
+        _isMousePressed = false;
+    }
+
+    private void OnMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        _positions.CameraPosition = _positions.CameraPosition with { X = _positions.CameraPosition.X - 0.1f * e.Delta };
         Draw();
     }
 }

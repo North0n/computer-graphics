@@ -145,8 +145,9 @@ public static class PainterService
         var objectX = (int)Math.Round(startX + horizontalProportion * positions.PositionX);
         var objectY = (int)Math.Round(startY + verticalProportion * positions.PositionZ);
 
-        var cameraX = (int)Math.Round(startX + horizontalProportion * positions.CameraPosition.X);
-        var cameraY = (int)Math.Round(startY + verticalProportion * positions.CameraPosition.Z);
+        var camPosition = VertexTransformer.ToOrthogonal(positions.CameraPosition);
+        var cameraX = (int)Math.Round(startX + horizontalProportion * camPosition.X);
+        var cameraY = (int)Math.Round(startY + verticalProportion * camPosition.Z);
 
         DrawLine(mapX, borderDistance, mapX + mapWidth, borderDistance, 0, 0, 0, bitmap); // top left to top right
         DrawLine(mapX + mapWidth, borderDistance, mapX + mapWidth, borderDistance + mapHeight, 0, 0, 0, bitmap); // top right to bottom right
