@@ -47,7 +47,8 @@ namespace ComputerGraphics.Services
 
             // TODO If cam is right above or below target, than it doesn't see target, because Vector3.Normalize(info.CameraTarget - info.CameraPosition) == -info.CamUp;
             // How to fix that?
-            var viewMatrix = Matrix4x4.CreateLookAt(ToOrthogonal(info.CameraPosition, info.CameraTarget), info.CameraTarget, info.CamUp);
+            var viewMatrix = Matrix4x4.CreateLookAt(ToOrthogonal(info.CameraPosition, info.CameraTarget),
+                info.CameraTarget, info.CamUp);
             var projectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(FieldOfView, (float)(gridWidth / gridHeight),
                 NearPlaneDistance, FarPlaneDistance);
             var viewPortMatrix = Matrix4x4Extension.CreateViewportLeftHanded(xMin, yMin, (float)gridWidth,
@@ -70,15 +71,12 @@ namespace ComputerGraphics.Services
         {
             var result = new Vector3[normals.Count];
 
-            var translationMatrix = Matrix4x4.CreateTranslation(info.PositionX, info.PositionY, info.PositionZ);
             var rotationMatrix = Matrix4x4.CreateRotationX(info.RotationX) * Matrix4x4.CreateRotationY(info.RotationY);
-
-            var matrix = rotationMatrix * translationMatrix;
             Parallel.ForEach(Partitioner.Create(0, normals.Count), range =>
             {
                 for (var i = range.Item1; i < range.Item2; ++i)
                 {
-                    var vec = Vector4.Transform(normals[i], matrix);
+                    var vec = Vector4.Transform(normals[i], rotationMatrix);
                     result[i] = new Vector3(vec.X, vec.Y, vec.Z);
                 }
             });
