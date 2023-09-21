@@ -77,11 +77,19 @@ public partial class MainWindow
             case Key.Down:
                 _positions.RotationX += RotationSpeed;
                 break;
-            case Key.Z:
+            case Key.W:
+                _positions.PositionZ += MoveSpeed;
+                _positions.CameraTarget = new Vector3(_positions.PositionX, _positions.PositionY, _positions.PositionZ);
+                break;
+            case Key.S:
+                _positions.PositionZ -= MoveSpeed;
+                _positions.CameraTarget = new Vector3(_positions.PositionX, _positions.PositionY, _positions.PositionZ);
+                break;
+            case Key.A:
                 _positions.PositionX += MoveSpeed;
                 _positions.CameraTarget = new Vector3(_positions.PositionX, _positions.PositionY, _positions.PositionZ);
                 break;
-            case Key.C:
+            case Key.D:
                 _positions.PositionX -= MoveSpeed;
                 _positions.CameraTarget = new Vector3(_positions.PositionX, _positions.PositionY, _positions.PositionZ);
                 break;
