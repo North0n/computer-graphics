@@ -14,13 +14,13 @@ namespace ComputerGraphics.Services
         private const float NearPlaneDistance = 0.1f;
         private const float FarPlaneDistance = 100;
 
-        public static Vector3 ToOrthogonal(Vector3 v)
+        public static Vector3 ToOrthogonal(Vector3 v, Vector3 rotationPoint)
         {
             var r = v.X;
             var phi = v.Y;
             var zenith = v.Z;
 
-            return new Vector3(r * Cos(zenith) * Sin(phi), r * Sin(zenith), r * Cos(zenith) * Cos(phi));
+            return new Vector3(r * Cos(zenith) * Sin(phi), r * Sin(zenith), r * Cos(zenith) * Cos(phi)) + rotationPoint;
 
             float Sin(float a)
             {
@@ -47,7 +47,7 @@ namespace ComputerGraphics.Services
 
             // TODO If cam is right above or below target, than it doesn't see target, because Vector3.Normalize(info.CameraTarget - info.CameraPosition) == -info.CamUp;
             // How to fix that?
-            var viewMatrix = Matrix4x4.CreateLookAt(ToOrthogonal(info.CameraPosition), info.CameraTarget, info.CamUp);
+            var viewMatrix = Matrix4x4.CreateLookAt(ToOrthogonal(info.CameraPosition, info.CameraTarget), info.CameraTarget, info.CamUp);
             var projectionMatrix = Matrix4x4.CreatePerspectiveFieldOfView(FieldOfView, (float)(gridWidth / gridHeight),
                 NearPlaneDistance, FarPlaneDistance);
             var viewPortMatrix = Matrix4x4Extension.CreateViewportLeftHanded(xMin, yMin, (float)gridWidth,

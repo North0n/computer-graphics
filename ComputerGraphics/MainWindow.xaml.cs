@@ -17,7 +17,7 @@ public partial class MainWindow
 {
     private readonly ImageInfo _positions = new()
     {
-        PositionZ = 0, CameraTarget = new Vector3(0, 0, 0), CameraPosition = new Vector3(900, 0, 0),
+        PositionZ = 0, CameraTarget = new Vector3(0, 0, 0), CameraPosition = new Vector3(900, (float)Math.PI, 0),
         CamUp = new Vector3(0, 1, 0)
     };
 
@@ -25,12 +25,11 @@ public partial class MainWindow
     private List<Vector3> _normals;
     private List<List<int>> _normalIndexes;
 
-    private bool _isMousePressed = false;
+    private bool _isMousePressed;
     private Point _pressPoint;
 
     private const float RotationSpeed = 0.1f;
     private const float MoveSpeed = 10f;
-    private const float MoveSpeedZ = 10f;
 
     private float[,] _zBuffer;
 
@@ -51,7 +50,8 @@ public partial class MainWindow
         var vertexes = VertexTransformer.TransformVertexes(_positions, Grid.ActualWidth, Grid.ActualHeight).ToArray();
         var normals = VertexTransformer.TransformNormals(_normals, _positions);
         var bitmap = PainterService.DrawModel(vertexes, _faces, (int)Grid.ActualWidth, (int)Grid.ActualHeight, _zBuffer,
-            normals.ToArray(), _normalIndexes, Vector3.Normalize(_positions.CameraPosition - _positions.CameraTarget));
+            normals.ToArray(), _normalIndexes,
+            Vector3.Normalize(VertexTransformer.ToOrthogonal(_positions.CameraPosition, _positions.CameraTarget) - _positions.CameraTarget));
         PainterService.AddMinimapToBitmap(_positions, bitmap);
         Image.Source = bitmap.Source;
     }
@@ -96,8 +96,8 @@ public partial class MainWindow
             return;
 
         var position = e.GetPosition(Image);
-        var phiOffset = -(position.X - _pressPoint.X) * 0.005;
-        var zenithOffset = (position.Y - _pressPoint.Y) * 0.002;
+        var phiOffset = (position.X - _pressPoint.X) * 0.005;
+        var zenithOffset = -(position.Y - _pressPoint.Y) * 0.002;
 
         _positions.CameraPosition =
             _positions.CameraPosition with { Y = _positions.CameraPosition.Y + (float)phiOffset };
@@ -105,7 +105,8 @@ public partial class MainWindow
         _positions.CameraPosition =
             _positions.CameraPosition with
             {
-                Z = (float)Math.Clamp(_positions.CameraPosition.Z + (float)zenithOffset, -Math.PI / 2, Math.PI / 2)
+                Z = (float)Math.Clamp(_positions.CameraPosition.Z + (float)zenithOffset, -Math.PI / 2 + 0.01,
+                    Math.PI / 2 - 0.01)
             };
 
         _pressPoint = position;

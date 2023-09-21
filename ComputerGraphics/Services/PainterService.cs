@@ -178,7 +178,7 @@ public static class PainterService
         var objectX = (int)Math.Round(startX + horizontalProportion * positions.PositionX);
         var objectY = (int)Math.Round(startY + verticalProportion * positions.PositionZ);
 
-        var camPosition = VertexTransformer.ToOrthogonal(positions.CameraPosition);
+        var camPosition = VertexTransformer.ToOrthogonal(positions.CameraPosition, positions.CameraTarget);
         var cameraX = (int)Math.Round(startX + horizontalProportion * camPosition.X);
         var cameraY = (int)Math.Round(startY + verticalProportion * camPosition.Z);
 
