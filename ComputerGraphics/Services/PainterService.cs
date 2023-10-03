@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
@@ -42,67 +43,65 @@ public static class PainterService
         }
     }
 
-    private static void DrawPolygon(IReadOnlyList<Vector4> vertexes, List<Vector3> normals, Bgra32Bitmap bitmap,
+    private static void DrawTriangle(List<Vector4> vertexes, List<Vector3> normals, Bgra32Bitmap bitmap,
         float[,] zBuffer, Vector3 lightDirection)
     {
-        var minY = Round(vertexes.Min(v => v.Y));
-        var maxY = Round(vertexes.Max(v => v.Y));
-
-        var intersections = new PriorityQueue<IntVector2D, IntVector2D>((maxY - minY) * vertexes.Count / 2);
-        for (var y = minY; y <= maxY; ++y)
-        {
-            for (var j = 0; j < vertexes.Count; j++)
-            {
-                var vertex = vertexes[j];
-                var nextVertex = vertexes[(j + 1) % vertexes.Count];
-
-                // If vertexes are on the one side of the line skip them
-                if (y < nextVertex.Y ^ y > vertex.Y)
-                    continue;
-
-                // Find intersection point
-                var k = (nextVertex.Y - vertex.Y) / (nextVertex.X - vertex.X);
-                var x = float.IsFinite(k) ? (y - (nextVertex.Y - k * nextVertex.X)) / k : vertex.X;
-
-                // Don't add intersection point if it is not inside polygon
-                if (x < Math.Min(vertex.X, nextVertex.X) || x > Math.Max(vertex.X, nextVertex.X))
-                    continue;
-
-                var len = Math.Sqrt(Math.Pow(vertex.X - nextVertex.X, 2) + Math.Pow(vertex.Y - nextVertex.Y, 2));
-                var curLen = Math.Sqrt(Math.Pow(vertex.X - x, 2) + Math.Pow(vertex.Y - y, 2));
-                var z = (float)(curLen / len * (nextVertex.Z - vertex.Z) + vertex.Z);
-                var vec = new IntVector2D(Round(x), y, z);
-                intersections.Enqueue(vec, vec);
-            }
-        }
-
         var intensity = normals.ConvertAll(n => Vector3.Dot(n, -lightDirection)).Average();
         // intensity = Math.Abs(intensity);
         if (intensity < 0)
             return;
 
-        var (r, g, b) = ((byte)(intensity * 200), (byte)(intensity * 200), (byte)(intensity * 200));
-        while (intersections.Count >= 2)
-        {
-            var vec1 = intersections.Dequeue();
-            var vec2 = intersections.Dequeue();
+        var (red, green, blue) = ((byte)(intensity * 200), (byte)(intensity * 200), (byte)(intensity * 200));
 
-            for (var x = vec1.X; x <= vec2.X; ++x)
+        var ordered = vertexes.OrderBy(v => v.Y).ToList();
+        var up = ordered[2];
+        var mid = ordered[1];
+        var down = ordered[0];
+
+        if (down.Y < 0)
+            return;
+
+        var upY = (int)up.Y;
+        var midY = (int)mid.Y;
+        var downY = (int)down.Y;
+
+        up.Z = 1 / up.Z;
+        down.Z = 1 / down.Z;
+        mid.Z = 1 / mid.Z;
+
+        var firstSegmentHeight = midY - downY;
+        var secondSegmentHeight = upY - midY;
+
+        var totalHeight = upY - downY;
+        for (var i = 0; i < totalHeight; i++)
+        {
+            var y = i + downY;
+
+            var secondHalf = i > firstSegmentHeight || midY == downY;
+            var segmentHeight = secondHalf ? secondSegmentHeight : firstSegmentHeight;
+            var alpha = (float)i / totalHeight;
+            var beta = (float)(i - (secondHalf ? firstSegmentHeight : 0)) / segmentHeight;
+
+            var a = down + (up - down) * alpha;
+            var b = secondHalf ? mid + (up - mid) * beta : down + (mid - down) * beta;
+
+            if (a.X > b.X) (a, b) = (b, a);
+
+            var deltaX = b.X - a.X + 1;
+
+            for (var x = (int)a.X; x <= (int)b.X; x++)
             {
-                if (x >= zBuffer.GetLength(0))
+                if (x >= bitmap.PixelWidth)
                     break;
 
-                if (x <= 0 || vec1.Y <= 0 || vec1.Y >= zBuffer.GetLength(1))
-                    continue;
+                var p = (x - a.X) / deltaX;
 
-                var k = vec2.X - vec1.X != 0 ? (float)(x - vec1.X) / (vec2.X - vec1.X) : float.MaxValue;
-
-                var z = k * (vec2.Z - vec1.Z) + vec1.Z;
-                if (zBuffer[x, vec1.Y] >= z)
-                    continue;
-
-                zBuffer[x, vec1.Y] = z;
-                bitmap.SetPixel(x, vec1.Y, r, g, b);
+                var z = 1 / (a.Z + p * (b.Z - a.Z));
+                if (zBuffer[x, y] < z)
+                {
+                    zBuffer[x, y] = z;
+                    bitmap.SetPixel(x, y, red, green, blue);
+                }
             }
         }
     }
@@ -127,7 +126,7 @@ public static class PainterService
             {
                 var face = faces[j];
                 var curNormals = normalIndexes[j];
-                DrawPolygon(face.ConvertAll(idx => vertexes[idx]), curNormals.ConvertAll(idx => normals[idx]), bitmap,
+                DrawTriangle(face.ConvertAll(idx => vertexes[idx]), curNormals.ConvertAll(idx => normals[idx]), bitmap,
                     zBuffer, lightDirection);
             }
         });
