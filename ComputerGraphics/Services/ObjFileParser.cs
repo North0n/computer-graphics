@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Numerics;
 
 namespace ComputerGraphics.Services
@@ -36,17 +37,22 @@ namespace ComputerGraphics.Services
                     }
                     else if (args[0] == "f")
                     {
-                        var face = new List<int>();
-                        var normal = new List<int>();
-                        for (int i = 1; i < args.Length; i++)
-                        {
-                            var indexes = args[i].Split('/');
-                            face.Add(int.Parse(indexes[0]) - 1);
-                            normal.Add(int.Parse(indexes[2]) - 1);
-                        }
+                        var argsIndexes = args.TakeLast(args.Length - 1).ToList();
 
-                        faces.Add(face);
-                        normalIndexes.Add(normal);
+                        for (var i = 0; i < argsIndexes.Count - 2; ++i)
+                        {
+                            var indexes = argsIndexes[0].Split('/');
+                            var face = new List<int> { int.Parse(indexes[0]) - 1 };
+                            var normal = new List<int>{ int.Parse(indexes[2]) - 1 };
+                            for (var j = 1; j < 3; ++j)
+                            {
+                                indexes = argsIndexes[(j + i) % argsIndexes.Count].Split('/');
+                                face.Add(int.Parse(indexes[0]) - 1);
+                                normal.Add(int.Parse(indexes[2]) - 1);
+                            }
+                            faces.Add(face);
+                            normalIndexes.Add(normal);
+                        }
                     }
                 }
             }
