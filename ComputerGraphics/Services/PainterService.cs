@@ -65,10 +65,6 @@ public static class PainterService
         var midY = (int)mid.Y;
         var downY = (int)down.Y;
 
-        up.Z = 1 / up.Z;
-        down.Z = 1 / down.Z;
-        mid.Z = 1 / mid.Z;
-
         var firstSegmentHeight = midY - downY;
         var secondSegmentHeight = upY - midY;
 
@@ -79,13 +75,15 @@ public static class PainterService
 
             var secondHalf = i > firstSegmentHeight || midY == downY;
             var segmentHeight = secondHalf ? secondSegmentHeight : firstSegmentHeight;
-            var alpha = (float)i / totalHeight;
-            var beta = (float)(i - (secondHalf ? firstSegmentHeight : 0)) / segmentHeight;
 
+            var alpha = (float)i / totalHeight;
             var a = down + (up - down) * alpha;
+
+            var beta = (float)(i - (secondHalf ? firstSegmentHeight : 0)) / segmentHeight;
             var b = secondHalf ? mid + (up - mid) * beta : down + (mid - down) * beta;
 
-            if (a.X > b.X) (a, b) = (b, a);
+            if (a.X > b.X)
+                (a, b) = (b, a);
 
             var deltaX = b.X - a.X + 1;
 
@@ -96,7 +94,7 @@ public static class PainterService
 
                 var p = (x - a.X) / deltaX;
 
-                var z = 1 / (a.Z + p * (b.Z - a.Z));
+                var z = a.Z + p * (b.Z - a.Z);
                 if (zBuffer[x, y] < z)
                 {
                     zBuffer[x, y] = z;
