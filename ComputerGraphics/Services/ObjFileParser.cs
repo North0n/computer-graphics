@@ -13,8 +13,7 @@ namespace ComputerGraphics.Services
         {
             var vertexes = new List<Vector3>();
             var normals = new List<Vector3>();
-            var faces = new List<List<int>>();
-            var normalIndexes = new List<List<int>>();
+            var triangles = new List<Triangle>();
 
             foreach (var line in fileContent)
             {
@@ -42,22 +41,25 @@ namespace ComputerGraphics.Services
                         for (var i = 0; i < argsIndexes.Count - 2; ++i)
                         {
                             var indexes = argsIndexes[0].Split('/');
-                            var face = new List<int> { int.Parse(indexes[0]) - 1 };
-                            var normal = new List<int>{ int.Parse(indexes[2]) - 1 };
+                            var triangleIndexes = new TriangleIndexes[3]
+                            {
+                                new(int.Parse(indexes[0]) - 1
+                                    , int.Parse(indexes[2]) - 1),
+                                new(),
+                                new()
+                            };
                             for (var j = 1; j < 3; ++j)
                             {
                                 indexes = argsIndexes[(j + i) % argsIndexes.Count].Split('/');
-                                face.Add(int.Parse(indexes[0]) - 1);
-                                normal.Add(int.Parse(indexes[2]) - 1);
+                                triangleIndexes[j] = new TriangleIndexes(int.Parse(indexes[0]) - 1, int.Parse(indexes[2]) - 1);
                             }
-                            faces.Add(face);
-                            normalIndexes.Add(normal);
+                            triangles.Add(new Triangle(triangleIndexes));
                         }
                     }
                 }
             }
 
-            return new ObjFileParseResult(vertexes, faces, normals, normalIndexes);
+            return new ObjFileParseResult(vertexes, normals, triangles);
         }
     }
 }

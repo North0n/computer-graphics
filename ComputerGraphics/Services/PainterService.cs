@@ -7,6 +7,7 @@ using System.Numerics;
 using System.Threading.Tasks;
 using System.Windows;
 using ComputerGraphics.Models;
+using Vector = System.Numerics.Vector;
 
 namespace ComputerGraphics.Services;
 
@@ -104,8 +105,8 @@ public static class PainterService
         }
     }
 
-    public static Bgra32Bitmap DrawModel(Vector4[] vertexes, List<List<int>> faces, int width, int height,
-        float[,] zBuffer, Vector3[] normals, List<List<int>> normalIndexes, Vector3 lightDirection)
+    public static Bgra32Bitmap DrawModel(Vector4[] vertexes, Vector3[] normals, List<Triangle> triangles, int width,
+        int height, float[,] zBuffer, Vector3 lightDirection)
     {
         for (var i = 0; i < width; ++i)
         {
@@ -118,14 +119,13 @@ public static class PainterService
         Bgra32Bitmap bitmap = new(width, height);
         bitmap.Source.Lock();
 
-        Parallel.ForEach(Partitioner.Create(0, faces.Count), range =>
+        Parallel.ForEach(Partitioner.Create(0, triangles.Count), range =>
         {
             for (var j = range.Item1; j < range.Item2; ++j)
             {
-                var face = faces[j];
-                var curNormals = normalIndexes[j];
-                DrawTriangle(face.ConvertAll(idx => vertexes[idx]), curNormals.ConvertAll(idx => normals[idx]), bitmap,
-                    zBuffer, lightDirection);
+                var idxs = triangles[j].Indexes;
+                DrawTriangle(idxs.Select(idx => vertexes[idx.Vertex]).ToList(),
+                    idxs.Select(idx => normals[idx.Normal]).ToList(), bitmap, zBuffer, lightDirection);
             }
         });
 

@@ -21,9 +21,8 @@ public partial class MainWindow
         CamUp = new Vector3(0, 1, 0)
     };
 
-    private List<List<int>> _faces;
     private List<Vector3> _normals;
-    private List<List<int>> _normalIndexes;
+    private List<Triangle> _triangles;
 
     private bool _isMousePressed;
     private Point _pressPoint;
@@ -41,7 +40,7 @@ public partial class MainWindow
 
     private void OnWindowLoaded(object sender, RoutedEventArgs e)
     {
-        (_positions.Vertexes, _faces, _normals, _normalIndexes) = ObjFileParser.Parse(File.ReadLines("amogus.obj"));
+        (_positions.Vertexes, _normals, _triangles) = ObjFileParser.Parse(File.ReadLines("amogus.obj"));
         Draw();
     }
 
@@ -49,8 +48,8 @@ public partial class MainWindow
     {
         var vertexes = VertexTransformer.TransformVertexes(_positions, Grid.ActualWidth, Grid.ActualHeight).ToArray();
         var normals = VertexTransformer.TransformNormals(_normals, _positions);
-        var bitmap = PainterService.DrawModel(vertexes, _faces, (int)Grid.ActualWidth, (int)Grid.ActualHeight, _zBuffer,
-            normals.ToArray(), _normalIndexes,
+        var bitmap = PainterService.DrawModel(vertexes, normals.ToArray(), _triangles, (int)Grid.ActualWidth,
+            (int)Grid.ActualHeight, _zBuffer,
             Vector3.Normalize(VertexTransformer.ToOrthogonal(_positions.CameraPosition, _positions.CameraTarget) -
                               _positions.CameraTarget));
         PainterService.AddMinimapToBitmap(_positions, bitmap);
