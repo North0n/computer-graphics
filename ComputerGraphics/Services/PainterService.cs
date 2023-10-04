@@ -45,17 +45,23 @@ public static class PainterService
     private static void DrawTriangle(List<Vector4> vertexes, List<Vector3> normals, Bgra32Bitmap bitmap,
         float[,] zBuffer, Vector3 lightDirection)
     {
-        var intensity = normals.ConvertAll(n => Vector3.Dot(n, -lightDirection)).Average();
+        var intensity = normals.ConvertAll(n => Vector3.Dot(n, lightDirection)).Average();
         // intensity = Math.Abs(intensity);
         if (intensity < 0)
             return;
 
         var (red, green, blue) = ((byte)(intensity * 200), (byte)(intensity * 200), (byte)(intensity * 200));
 
-        var ordered = vertexes.OrderBy(v => v.Y).ToList();
-        var up = ordered[2];
-        var mid = ordered[1];
-        var down = ordered[0];
+        var up = vertexes[2];
+        var mid = vertexes[1];
+        var down = vertexes[0];
+
+        if (down.Y > mid.Y)
+            (down, mid) = (mid, down);
+        if (down.Y > up.Y)
+            (down, up) = (up, down);
+        if (mid.Y > up.Y)
+            (up, mid) = (mid, up);
 
         if (down.Y < 0)
             return;
