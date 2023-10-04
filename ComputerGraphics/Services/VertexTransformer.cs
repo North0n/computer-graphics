@@ -64,10 +64,8 @@ namespace ComputerGraphics.Services
             });
         }
 
-        public static IEnumerable<Vector3> TransformNormals(List<Vector3> normals, ImageInfo info)
+        public static void TransformNormals(List<Vector3> normals, ImageInfo info, Vector3[] result)
         {
-            var result = new Vector3[normals.Count];
-
             var rotationMatrix = Matrix4x4.CreateRotationX(info.RotationX) * Matrix4x4.CreateRotationY(info.RotationY);
             Parallel.ForEach(Partitioner.Create(0, normals.Count), range =>
             {
@@ -77,7 +75,6 @@ namespace ComputerGraphics.Services
                     result[i] = new Vector3(vec.X, vec.Y, vec.Z);
                 }
             });
-            return result;
         }
     }
 }
