@@ -33,14 +33,12 @@ namespace ComputerGraphics.Services
             }
         }
 
-        public static IEnumerable<Vector4> TransformVertexes(ImageInfo info, double gridWidth, double gridHeight)
+        public static void TransformVertexes(ImageInfo info, double gridWidth, double gridHeight, Vector4[] result)
         {
             const float xMin = 0;
             const float yMin = 0;
             const float minDepth = 0;
             const float maxDepth = 1;
-
-            var result = new Vector4[info.Vertexes.Count];
 
             var translationMatrix = Matrix4x4.CreateTranslation(info.PositionX, info.PositionY, info.PositionZ);
             var rotationMatrix = Matrix4x4.CreateRotationX(info.RotationX) * Matrix4x4.CreateRotationY(info.RotationY);
@@ -64,7 +62,6 @@ namespace ComputerGraphics.Services
                     result[i] = Vector4.Transform(result[i], viewPortMatrix);
                 }
             });
-            return result;
         }
 
         public static IEnumerable<Vector3> TransformNormals(List<Vector3> normals, ImageInfo info)

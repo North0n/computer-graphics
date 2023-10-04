@@ -27,6 +27,9 @@ public partial class MainWindow : INotifyPropertyChanged
     private List<Vector3> _normals;
     private List<Triangle> _triangles;
 
+    private Vector4[] _transformedVertexes;
+    private Vector3[] _transformedNormals;
+
     private bool _isMousePressed;
     private Point _pressPoint;
 
@@ -71,7 +74,9 @@ public partial class MainWindow : INotifyPropertyChanged
 
     private void OnWindowLoaded(object sender, RoutedEventArgs e)
     {
-        (_positions.Vertexes, _normals, _triangles) = ObjFileParser.Parse(File.ReadLines("amogus.obj"));
+        (_positions.Vertexes, _normals, _triangles) = ObjFileParser.Parse(File.ReadLines("Shaylushay.obj"));
+        _transformedVertexes = new Vector4[_positions.Vertexes.Count];
+        _transformedNormals = new Vector3[_normals.Count];
         Draw();
     }
 
@@ -79,9 +84,9 @@ public partial class MainWindow : INotifyPropertyChanged
     {
         _stopwatch.Reset();
         _stopwatch.Start();
-        var vertexes = VertexTransformer.TransformVertexes(_positions, Grid.ActualWidth, Grid.ActualHeight).ToArray();
-        var normals = VertexTransformer.TransformNormals(_normals, _positions);
-        var bitmap = PainterService.DrawModel(vertexes, normals.ToArray(), _triangles, (int)Grid.ActualWidth,
+        VertexTransformer.TransformVertexes(_positions, Grid.ActualWidth, Grid.ActualHeight, _transformedVertexes);
+        VertexTransformer.TransformNormals(_normals, _positions, _transformedNormals);
+        var bitmap = PainterService.DrawModel(_transformedVertexes, _transformedNormals, _triangles, (int)Grid.ActualWidth,
             (int)Grid.ActualHeight, _zBuffer,
             Vector3.Normalize(VertexTransformer.ToOrthogonal(_positions.CameraPosition, _positions.CameraTarget) -
                               _positions.CameraTarget));
