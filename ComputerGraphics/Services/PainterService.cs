@@ -1,13 +1,11 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
 using System.Windows;
 using ComputerGraphics.Models;
-using Vector = System.Numerics.Vector;
 
 namespace ComputerGraphics.Services;
 
@@ -73,6 +71,8 @@ public static class PainterService
         for (var i = 0; i < totalHeight; i++)
         {
             var y = i + downY;
+            if (y >= bitmap.PixelHeight)
+                break;
 
             var secondHalf = i > firstSegmentHeight || midY == downY;
             var segmentHeight = secondHalf ? secondSegmentHeight : firstSegmentHeight;

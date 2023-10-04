@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
 using ComputerGraphics.Models;
@@ -13,7 +16,7 @@ namespace ComputerGraphics;
 /// <summary>
 /// Interaction logic for MainWindow.xaml
 /// </summary>
-public partial class MainWindow
+public partial class MainWindow : INotifyPropertyChanged
 {
     private readonly ImageInfo _positions = new()
     {
@@ -32,9 +35,37 @@ public partial class MainWindow
 
     private float[,] _zBuffer;
 
+    private string _frameTime;
+
+    public string FrameTime
+    {
+        get => _frameTime;
+        private set
+        {
+            _frameTime = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public event PropertyChangedEventHandler PropertyChanged;
+
+    private void OnPropertyChanged([CallerMemberName] string propertyName = null)
+    {
+        var handler = PropertyChanged;
+        if (handler == null)
+            return;
+
+        var e = new PropertyChangedEventArgs(propertyName);
+        handler(this, e);
+    }
+
+    private readonly Stopwatch _stopwatch = new();
+
     public MainWindow()
     {
         InitializeComponent();
+        DataContext = this;
+
         _zBuffer = new float[(int)Grid.ActualWidth, (int)Grid.ActualHeight];
     }
 
@@ -46,6 +77,8 @@ public partial class MainWindow
 
     private void Draw()
     {
+        _stopwatch.Reset();
+        _stopwatch.Start();
         var vertexes = VertexTransformer.TransformVertexes(_positions, Grid.ActualWidth, Grid.ActualHeight).ToArray();
         var normals = VertexTransformer.TransformNormals(_normals, _positions);
         var bitmap = PainterService.DrawModel(vertexes, normals.ToArray(), _triangles, (int)Grid.ActualWidth,
@@ -54,6 +87,8 @@ public partial class MainWindow
                               _positions.CameraTarget));
         PainterService.AddMinimapToBitmap(_positions, bitmap);
         Image.Source = bitmap.Source;
+        _stopwatch.Stop();
+        FrameTime = $"{_stopwatch.ElapsedMilliseconds}ms";
     }
 
     private void OnWindowSizeChanged(object sender, SizeChangedEventArgs e)

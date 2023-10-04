@@ -5,9 +5,12 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="MegaLab" Height="450" Width="800" WindowState="Maximized"
+        xmlns:self="clr-namespace:ComputerGraphics"
+        d:DataContext="{d:DesignInstance Type=self:MainWindow}"
         Loaded="OnWindowLoaded" KeyDown="OnWindowKeydown" MouseMove="OnMouseMove" MouseDown="OnMouseDown"
         MouseUp="OnMouseUp" MouseWheel="OnMouseWheel" SizeChanged="OnWindowSizeChanged">
     <Grid x:Name="Grid">
         <Image x:Name="Image"/>
+        <Label Content="{Binding Path=FrameTime}"></Label>
     </Grid>
 </Window>
