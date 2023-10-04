@@ -10,7 +10,7 @@ namespace ComputerGraphics.Services
 {
     public static class VertexTransformer
     {
-        private const float FieldOfView = MathF.PI / 2;
+        private const float FieldOfView = MathF.PI / 8;
         private const float NearPlaneDistance = 0.1f;
         private const float FarPlaneDistance = 100;
 
