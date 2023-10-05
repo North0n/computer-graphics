@@ -16,6 +16,19 @@ public static class PainterService
         return (int)Math.Round(x, MidpointRounding.AwayFromZero);
     }
 
+    private static bool IsBackFace(IReadOnlyList<Vector4> vertexes)
+    {
+        var a = vertexes[0];
+        var b = vertexes[1];
+        var c = vertexes[2];
+
+        var ab = b - a;
+        var ac = c - a;
+
+        var perpDotProduct = ab.X * ac.Y - ab.Y * ac.X;
+        return perpDotProduct < 0;
+    }
+
     private static void DrawLine(float x0, float y0, float x1, float y1, byte r, byte g, byte b, Bgra32Bitmap bitmap)
     {
         // ReSharper disable InconsistentNaming
@@ -45,10 +58,11 @@ public static class PainterService
     private static void DrawTriangle(List<Vector4> vertexes, List<Vector3> normals, Bgra32Bitmap bitmap,
         float[,] zBuffer, Vector3 lightDirection)
     {
-        var intensity = normals.ConvertAll(n => Vector3.Dot(n, lightDirection)).Average();
-        // intensity = Math.Abs(intensity);
-        if (intensity < 0)
+        if (IsBackFace(vertexes))
             return;
+
+        var intensity = normals.ConvertAll(n => Vector3.Dot(n, lightDirection)).Average();
+        intensity = Math.Max(intensity, 0);
 
         var (red, green, blue) = ((byte)(intensity * 200), (byte)(intensity * 200), (byte)(intensity * 200));
 
