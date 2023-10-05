@@ -20,7 +20,7 @@ public partial class MainWindow : INotifyPropertyChanged
 {
     private readonly ImageInfo _positions = new()
     {
-        PositionZ = 0, CameraTarget = new Vector3(0, 0, 0), CameraPosition = new Vector3(900, (float)Math.PI, 0),
+        PositionZ = 0, CameraTarget = new Vector3(0, 0, 0), CameraPosition = new Vector3(3000, (float)Math.PI, 0),
         CamUp = new Vector3(0, 1, 0)
     };
 
