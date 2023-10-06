@@ -148,15 +148,12 @@ public partial class MainWindow : INotifyPropertyChanged
         var phiOffset = (position.X - _pressPoint.X) * 0.005;
         var zenithOffset = -(position.Y - _pressPoint.Y) * 0.002;
 
-        _positions.CameraPosition =
-            _positions.CameraPosition with { Y = _positions.CameraPosition.Y + (float)phiOffset };
-
-        _positions.CameraPosition =
-            _positions.CameraPosition with
-            {
-                Z = (float)Math.Clamp(_positions.CameraPosition.Z + (float)zenithOffset, -Math.PI / 2 + 0.01,
-                    Math.PI / 2 - 0.01)
-            };
+        _positions.CameraPosition = _positions.CameraPosition with
+        {
+            Y = _positions.CameraPosition.Y + (float)phiOffset,
+            Z = (float)Math.Clamp(_positions.CameraPosition.Z + (float)zenithOffset, -Math.PI / 2 + 0.01,
+                Math.PI / 2 - 0.01)
+        };
 
         _pressPoint = position;
         Draw();
