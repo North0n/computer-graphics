@@ -61,11 +61,6 @@ public static class PainterService
         if (IsBackFace(vertexes))
             return;
 
-        var intensity = normals.ConvertAll(n => Vector3.Dot(n, -lightDirection)).Average();
-        intensity = Math.Max(intensity, 0);
-
-        var (red, green, blue) = ((byte)(intensity * 200), (byte)(intensity * 200), (byte)(intensity * 200));
-
         var up = vertexes[2];
         var mid = vertexes[1];
         var down = vertexes[0];
@@ -116,13 +111,58 @@ public static class PainterService
                 var p = (x - a.X) / deltaX;
 
                 var z = a.Z + p * (b.Z - a.Z);
-                if (zBuffer[x, y] > z)
+
+                var shouldSetPixel = false;
+                lock (zBuffer)
                 {
-                    zBuffer[x, y] = z;
+                    if (shouldSetPixel = zBuffer[x, y] > z)
+                    {
+                        zBuffer[x, y] = z;
+                    }
+                }
+
+                if (shouldSetPixel)
+                {
+                    (var red, var green, var blue) = GetPointColor(new Vector3(x, y, z), vertexes, normals, lightDirection, lightDirection);
                     bitmap.SetPixel(x, y, red, green, blue);
                 }
             }
         }
+    }
+
+    private static readonly Vector3 AmbientColor = new(155, 10, 10);
+    private static readonly Vector3 DiffuseColor = new(50, 100, 230);
+    private static readonly Vector3 SpectralColor = new(255, 255, 255);
+    private const float AmbientWeight = 0.5f;
+    private const float DiffuseWeight = 1f;
+    private const float SpectralWeight = 0.5f;
+
+    private static (byte R, byte G, byte B) GetPointColor(Vector3 point, List<Vector4> vertexes, List<Vector3> normals,
+        Vector3 lightDirection, Vector3 viewDirection)
+    {
+        var a = new Vector3(vertexes[0].X, vertexes[0].Y, vertexes[0].Z); 
+        var b = new Vector3(vertexes[1].X, vertexes[1].Y, vertexes[1].Z);
+        var c = new Vector3(vertexes[2].X, vertexes[2].Y, vertexes[2].Z);
+
+        var area = Vector3.Cross(b - a, c - a).Length();
+
+        var u = Vector3.Cross(c - b, point - b).Length() / area;
+        var v = Vector3.Cross(a - c, point - c).Length() / area;
+        var w = Vector3.Cross(b - a, point - a).Length() / area;
+
+        var interpolatedNormal = Vector3.Normalize(u * normals[0] + v * normals[1] + w * normals[2]);
+        var lightLength = lightDirection.Length();
+
+        var diffuse = Math.Max(0, Vector3.Dot(interpolatedNormal, lightDirection) / (lightLength * lightLength));
+        var spectral = Math.Max(0, Vector3.Dot(Vector3.Normalize(viewDirection), -Vector3.Reflect(lightDirection, interpolatedNormal)));
+
+        var color = AmbientWeight * AmbientColor
+            + DiffuseWeight * diffuse * DiffuseColor
+            + SpectralWeight * spectral * SpectralColor;
+
+        return ((byte)Math.Max(0, Math.Min(color.X, 255)),
+            (byte)Math.Max(0, Math.Min(color.Y, 255)),
+            (byte)Math.Max(0, Math.Min(color.Z, 255)));
     }
 
     public static Bgra32Bitmap DrawModel(Vector4[] vertexes, Vector3[] normals, List<Triangle> triangles, int width,
