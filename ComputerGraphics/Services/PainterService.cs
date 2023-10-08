@@ -26,7 +26,7 @@ public static class PainterService
         var ac = c - a;
 
         var perpDotProduct = ab.X * ac.Y - ab.Y * ac.X;
-        return perpDotProduct < 0;
+        return perpDotProduct > 0;
     }
 
     private static void DrawLine(float x0, float y0, float x1, float y1, byte r, byte g, byte b, Bgra32Bitmap bitmap)
@@ -61,7 +61,7 @@ public static class PainterService
         if (IsBackFace(vertexes))
             return;
 
-        var intensity = normals.ConvertAll(n => Vector3.Dot(n, lightDirection)).Average();
+        var intensity = normals.ConvertAll(n => Vector3.Dot(n, -lightDirection)).Average();
         intensity = Math.Max(intensity, 0);
 
         var (red, green, blue) = ((byte)(intensity * 200), (byte)(intensity * 200), (byte)(intensity * 200));
@@ -116,7 +116,7 @@ public static class PainterService
                 var p = (x - a.X) / deltaX;
 
                 var z = a.Z + p * (b.Z - a.Z);
-                if (zBuffer[x, y] < z)
+                if (zBuffer[x, y] > z)
                 {
                     zBuffer[x, y] = z;
                     bitmap.SetPixel(x, y, red, green, blue);
@@ -132,7 +132,7 @@ public static class PainterService
         {
             for (var j = 0; j < height; ++j)
             {
-                zBuffer[i, j] = float.MinValue;
+                zBuffer[i, j] = float.MaxValue;
             }
         }
 

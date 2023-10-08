@@ -146,7 +146,7 @@ public partial class MainWindow : INotifyPropertyChanged
 
         var position = e.GetPosition(Image);
         var phiOffset = (position.X - _pressPoint.X) * 0.005;
-        var zenithOffset = -(position.Y - _pressPoint.Y) * 0.002;
+        var zenithOffset = (position.Y - _pressPoint.Y) * 0.002;
 
         _positions.CameraPosition = _positions.CameraPosition with
         {

@@ -20,7 +20,7 @@ namespace ComputerGraphics.Services
             var phi = v.Y;
             var zenith = v.Z;
 
-            return new Vector3(r * Cos(zenith) * Sin(phi), r * Sin(zenith), r * Cos(zenith) * Cos(phi)) + rotationPoint;
+            return new Vector3(r * Cos(zenith) * Sin(phi), r * Sin(zenith), -r * Cos(zenith) * Cos(phi)) + rotationPoint;
 
             float Sin(float a)
             {
