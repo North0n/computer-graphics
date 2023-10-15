@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using ComputerGraphics.Models;
@@ -11,6 +12,8 @@ namespace ComputerGraphics.Services;
 
 public static class PainterService
 {
+    private static SpinLock[][] _spinLocks;
+
     private static int Round(float x)
     {
         return (int)Math.Round(x, MidpointRounding.AwayFromZero);
@@ -56,7 +59,7 @@ public static class PainterService
     }
 
     private static void DrawTriangle(List<Vector4> vertexes, List<Vector3> normals, Bgra32Bitmap bitmap,
-        float[,] zBuffer, Vector3 lightDirection)
+        float[,] zBuffer, Vector3 lightDirection, Vector3 viewDirection)
     {
         if (IsBackFace(vertexes))
             return;
@@ -112,19 +115,20 @@ public static class PainterService
 
                 var z = a.Z + p * (b.Z - a.Z);
 
-                var shouldSetPixel = false;
-                lock (zBuffer)
+                var gotLock = false;
+                try
                 {
-                    if (shouldSetPixel = zBuffer[x, y] > z)
+                    _spinLocks[x][y].Enter(ref gotLock);
+                    if (zBuffer[x, y] > z)
                     {
                         zBuffer[x, y] = z;
+                        (var red, var green, var blue) = GetPointColor(new Vector3(x, y, z), vertexes, normals, lightDirection, viewDirection);
+                        bitmap.SetPixel(x, y, red, green, blue);
                     }
                 }
-
-                if (shouldSetPixel)
+                finally
                 {
-                    (var red, var green, var blue) = GetPointColor(new Vector3(x, y, z), vertexes, normals, lightDirection, lightDirection);
-                    bitmap.SetPixel(x, y, red, green, blue);
+                    if (gotLock) _spinLocks[x][y].Exit();
                 }
             }
         }
@@ -134,13 +138,13 @@ public static class PainterService
     private static readonly Vector3 DiffuseColor = new(50, 100, 230);
     private static readonly Vector3 SpectralColor = new(255, 255, 255);
     private const float AmbientWeight = 0.5f;
-    private const float DiffuseWeight = 1f;
-    private const float SpectralWeight = 0.5f;
+    private const float DiffuseWeight = 10f;
+    private const float SpectralWeight = 0.0f;
 
     private static (byte R, byte G, byte B) GetPointColor(Vector3 point, List<Vector4> vertexes, List<Vector3> normals,
         Vector3 lightDirection, Vector3 viewDirection)
     {
-        var a = new Vector3(vertexes[0].X, vertexes[0].Y, vertexes[0].Z); 
+        var a = new Vector3(vertexes[0].X, vertexes[0].Y, vertexes[0].Z);
         var b = new Vector3(vertexes[1].X, vertexes[1].Y, vertexes[1].Z);
         var c = new Vector3(vertexes[2].X, vertexes[2].Y, vertexes[2].Z);
 
@@ -154,7 +158,7 @@ public static class PainterService
         var lightLength = lightDirection.Length();
 
         var diffuse = Math.Max(0, Vector3.Dot(interpolatedNormal, lightDirection) / (lightLength * lightLength));
-        var spectral = Math.Max(0, Vector3.Dot(Vector3.Normalize(viewDirection), -Vector3.Reflect(lightDirection, interpolatedNormal)));
+        var spectral = Math.Max(0, Vector3.Dot(Vector3.Normalize(viewDirection), Vector3.Reflect(lightDirection, interpolatedNormal)));
 
         var color = AmbientWeight * AmbientColor
             + DiffuseWeight * diffuse * DiffuseColor
@@ -166,8 +170,10 @@ public static class PainterService
     }
 
     public static Bgra32Bitmap DrawModel(Vector4[] vertexes, Vector3[] normals, List<Triangle> triangles, int width,
-        int height, float[,] zBuffer, Vector3 lightDirection)
+        int height, float[,] zBuffer, Vector3 lightDirection, Vector3 viewDirection)
     {
+        InitializeSpinLocks(width, height);
+        
         for (var i = 0; i < width; ++i)
         {
             for (var j = 0; j < height; ++j)
@@ -185,7 +191,7 @@ public static class PainterService
             {
                 var idxs = triangles[j].Indexes;
                 DrawTriangle(idxs.Select(idx => vertexes[idx.Vertex]).ToList(),
-                    idxs.Select(idx => normals[idx.Normal]).ToList(), bitmap, zBuffer, lightDirection);
+                    idxs.Select(idx => normals[idx.Normal]).ToList(), bitmap, zBuffer, lightDirection, viewDirection);
             }
         });
 
@@ -213,6 +219,17 @@ public static class PainterService
                 }
             }
         }
+    }
+
+    private static void InitializeSpinLocks(int width, int height)
+    {
+        if (_spinLocks != null && _spinLocks.Length != 0
+            && _spinLocks.Length == width && _spinLocks[0].Length == height)
+        {
+            return;
+        }
+
+        _spinLocks = Enumerable.Repeat(new SpinLock[height], width).ToArray();
     }
 
     public static void AddMinimapToBitmap(ImageInfo positions, Bgra32Bitmap bitmap)
