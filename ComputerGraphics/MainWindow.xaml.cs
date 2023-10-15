@@ -20,7 +20,7 @@ public partial class MainWindow : INotifyPropertyChanged
 {
     private readonly ImageInfo _positions = new()
     {
-        PositionZ = 0, CameraTarget = new Vector3(0, 0, 0), CameraPosition = new Vector3(3000, (float)Math.PI, 0),
+        PositionZ = 0, CameraTarget = new Vector3(0, 0, 0), CameraPosition = new Vector3(12, (float)Math.PI, 0),
         CamUp = new Vector3(0, 1, 0)
     };
 
@@ -74,7 +74,7 @@ public partial class MainWindow : INotifyPropertyChanged
 
     private void OnWindowLoaded(object sender, RoutedEventArgs e)
     {
-        (_positions.Vertexes, _normals, _triangles) = ObjFileParser.Parse(File.ReadLines("Shaylushay.obj"));
+        (_positions.Vertexes, _normals, _triangles) = ObjFileParser.Parse(File.ReadLines("amogus.obj"));
         _transformedVertexes = new Vector4[_positions.Vertexes.Count];
         _transformedNormals = new Vector3[_normals.Count];
         Draw();
@@ -172,7 +172,7 @@ public partial class MainWindow : INotifyPropertyChanged
 
     private void OnMouseWheel(object sender, MouseWheelEventArgs e)
     {
-        _positions.CameraPosition = _positions.CameraPosition with { X = _positions.CameraPosition.X - 0.1f * e.Delta };
+        _positions.CameraPosition = _positions.CameraPosition with { X = _positions.CameraPosition.X - 0.01f * e.Delta };
         Draw();
     }
 }
