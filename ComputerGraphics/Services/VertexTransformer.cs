@@ -42,6 +42,7 @@ namespace ComputerGraphics.Services
 
             var translationMatrix = Matrix4x4.CreateTranslation(info.PositionX, info.PositionY, info.PositionZ);
             var rotationMatrix = Matrix4x4.CreateRotationX(info.RotationX) * Matrix4x4.CreateRotationY(info.RotationY);
+            var scaleMatrix = Matrix4x4.CreateScale(0.01f, 0.01f, 0.01f);
 
             // TODO If cam is right above or below target, than it doesn't see target, because Vector3.Normalize(info.CameraTarget - info.CameraPosition) == -info.CamUp;
             // How to fix that?
@@ -52,7 +53,7 @@ namespace ComputerGraphics.Services
             var viewPortMatrix = Matrix4x4Extension.CreateViewportLeftHanded(xMin, yMin, (float)gridWidth,
                 (float)gridHeight, minDepth, maxDepth);
 
-            var matrix = rotationMatrix * translationMatrix * viewMatrix * projectionMatrix;
+            var matrix = scaleMatrix * rotationMatrix * translationMatrix * viewMatrix * projectionMatrix;
             Parallel.ForEach(Partitioner.Create(0, info.Vertexes.Count), range =>
             {
                 for (var i = range.Item1; i < range.Item2; ++i)
