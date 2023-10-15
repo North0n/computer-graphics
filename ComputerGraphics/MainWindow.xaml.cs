@@ -120,19 +120,31 @@ public partial class MainWindow : INotifyPropertyChanged
                 break;
             case Key.W:
                 _positions.PositionZ += MoveSpeed;
-                _positions.CameraTarget = new Vector3(_positions.PositionX, _positions.PositionY, _positions.PositionZ);
+                _positions.CameraTarget = _positions.CameraTarget with
+                {
+                    Z = _positions.CameraTarget.Z + MoveSpeed
+                };
                 break;
             case Key.S:
                 _positions.PositionZ -= MoveSpeed;
-                _positions.CameraTarget = new Vector3(_positions.PositionX, _positions.PositionY, _positions.PositionZ);
+                _positions.CameraTarget = _positions.CameraTarget with
+                {
+                    Z = _positions.CameraTarget.Z - MoveSpeed
+                };
                 break;
             case Key.A:
                 _positions.PositionX += MoveSpeed;
-                _positions.CameraTarget = new Vector3(_positions.PositionX, _positions.PositionY, _positions.PositionZ);
+                _positions.CameraTarget = _positions.CameraTarget with
+                {
+                    X = _positions.CameraTarget.X + MoveSpeed
+                };
                 break;
             case Key.D:
                 _positions.PositionX -= MoveSpeed;
-                _positions.CameraTarget = new Vector3(_positions.PositionX, _positions.PositionY, _positions.PositionZ);
+                _positions.CameraTarget = _positions.CameraTarget with
+                {
+                    X = _positions.CameraTarget.X - MoveSpeed
+                };
                 break;
         }
 
@@ -145,15 +157,26 @@ public partial class MainWindow : INotifyPropertyChanged
             return;
 
         var position = e.GetPosition(Image);
-        var phiOffset = (position.X - _pressPoint.X) * 0.005;
-        var zenithOffset = (position.Y - _pressPoint.Y) * 0.002;
-
-        _positions.CameraPosition = _positions.CameraPosition with
+        if (e.MiddleButton == MouseButtonState.Pressed)
         {
-            Y = _positions.CameraPosition.Y + (float)phiOffset,
-            Z = (float)Math.Clamp(_positions.CameraPosition.Z + (float)zenithOffset, -Math.PI / 2 + 0.01,
-                Math.PI / 2 - 0.01)
-        };
+            var yOffset = (float)((position.Y - _pressPoint.Y) * 0.002);
+            _positions.CameraTarget = _positions.CameraTarget with
+            {
+                Y = _positions.CameraTarget.Y + yOffset
+            };
+        }
+        else
+        {
+            var phiOffset = (position.X - _pressPoint.X) * 0.005;
+            var zenithOffset = (position.Y - _pressPoint.Y) * 0.002;
+
+            _positions.CameraPosition = _positions.CameraPosition with
+            {
+                Y = _positions.CameraPosition.Y + (float)phiOffset,
+                Z = (float)Math.Clamp(_positions.CameraPosition.Z + (float)zenithOffset, -Math.PI / 2 + 0.01,
+                    Math.PI / 2 - 0.01)
+            };
+        }
 
         _pressPoint = position;
         Draw();
