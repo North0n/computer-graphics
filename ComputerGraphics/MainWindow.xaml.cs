@@ -91,7 +91,7 @@ public partial class MainWindow : INotifyPropertyChanged
         var bitmap = PainterService.DrawModel(_transformedVertexes, _transformedNormals, _triangles,
             (int)Grid.ActualWidth,
             (int)Grid.ActualHeight, _zBuffer,
-            new Vector3(3, 3, 3),
+            new Vector3(10, 0, 10),
             viewPosition
         );
         PainterService.AddMinimapToBitmap(_positions, bitmap);

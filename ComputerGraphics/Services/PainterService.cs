@@ -134,12 +134,12 @@ public static class PainterService
         }
     }
 
-    private static readonly Vector3 AmbientColor = new(155, 10, 10);
+    private static readonly Vector3 AmbientColor = new Vector3(20, 30, 60);
     private static readonly Vector3 DiffuseColor = new(50, 100, 230);
-    private static readonly Vector3 SpectralColor = new(255, 255, 255);
+    private static readonly Vector3 SpectralColor = new Vector3(255, 255, 255) / 50000;
     private const float AmbientWeight = 0.5f;
     private const float DiffuseWeight = 10f;
-    private const float SpectralWeight = 0.0f;
+    private const float SpectralWeight = 4f;
 
     private static (byte R, byte G, byte B) GetPointColor(Vector3 point, List<Vector4> vertexes, List<Vector3> normals,
         Vector3 lightDirection, Vector3 viewDirection)
@@ -158,11 +158,11 @@ public static class PainterService
         var lightLength = lightDirection.Length();
 
         var diffuse = Math.Max(0, Vector3.Dot(interpolatedNormal, lightDirection) / (lightLength * lightLength));
-        var spectral = Math.Max(0, Vector3.Dot(Vector3.Normalize(viewDirection), Vector3.Reflect(lightDirection, interpolatedNormal)));
+        var spectral = Math.Max(0, Vector3.Dot(viewDirection, Vector3.Reflect(lightDirection, interpolatedNormal)));
 
         var color = AmbientWeight * AmbientColor
             + DiffuseWeight * diffuse * DiffuseColor
-            + SpectralWeight * spectral * SpectralColor;
+            + MathF.Pow(spectral, SpectralWeight) * SpectralColor;
 
         return ((byte)Math.Max(0, Math.Min(color.X, 255)),
             (byte)Math.Max(0, Math.Min(color.Y, 255)),
