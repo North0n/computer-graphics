@@ -134,14 +134,13 @@ public static class PainterService
         }
     }
 
-    private static readonly Vector3 AmbientColor = new Vector3(20, 30, 60);
-    private static readonly Vector3 DiffuseColor = new(50, 100, 230);
-    private static readonly Vector3 SpectralColor = new Vector3(255, 255, 255) / 50000;
-    private const float AmbientWeight = 0.5f;
-    private const float DiffuseWeight = 10f;
-    private const float SpectralWeight = 4f;
 
-    private static (byte R, byte G, byte B) GetPointColor(Vector3 point, List<Vector4> vertexes, List<Vector3> normals,
+    private static readonly Vector3 LightColor = new(1f, 1f, 1f);
+    private const float LightIntensity = 80;
+    private const float AmbientLightIntensity = 0.1f;
+    private static readonly Vector3 ModelColor = new(0.8f, 0.2f, 0.8f);
+
+    private static (float R, float G, float B) GetPointColor(Vector3 point, List<Vector4> vertexes, List<Vector3> normals,
         Vector3 lightDirection, Vector3 viewDirection)
     {
         var a = new Vector3(vertexes[0].X, vertexes[0].Y, vertexes[0].Z);
@@ -155,10 +154,16 @@ public static class PainterService
         var w = Vector3.Cross(b - a, point - a).Length() / area;
 
         var interpolatedNormal = Vector3.Normalize(u * normals[0] + v * normals[1] + w * normals[2]);
-        var lightLength = lightDirection.Length();
+        var lightDistSqr = lightDirection.LengthSquared();
+        var ambient = AmbientLightIntensity * LightColor * ModelColor;
+        var normLightDir = Vector3.Normalize(lightDirection);
+        var nDotL = Math.Max(0, Vector3.Dot(interpolatedNormal, normLightDir));
+        var irradiance = LightColor * LightIntensity * nDotL / lightDistSqr;
+        var diffuse = irradiance * ModelColor;
+        var rDotV = Math.Max(0, Vector3.Dot(viewDirection, Vector3.Reflect(normLightDir, interpolatedNormal)));
+        var specular = MathF.Pow(rDotV, 64) * ModelColor * irradiance;
 
-        var diffuse = Math.Max(0, Vector3.Dot(interpolatedNormal, lightDirection) / (lightLength * lightLength));
-        var spectral = Math.Max(0, Vector3.Dot(viewDirection, Vector3.Reflect(lightDirection, interpolatedNormal)));
+        var color = ambient + diffuse + specular;
 
         return (Math.Max(0, Math.Min(color.X, 1)),
             Math.Max(0, Math.Min(color.Y, 1)),
