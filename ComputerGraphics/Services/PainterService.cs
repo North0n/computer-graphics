@@ -239,8 +239,8 @@ public static class PainterService
         var startX = mapX + mapWidth / 2;
         const int startY = borderDistance + mapHeight / 2;
 
-        const int pixelsInHorizontalAxis = 8000;
-        const int pixelsInVerticalAxis = 8000;
+        const int pixelsInHorizontalAxis = 200;
+        const int pixelsInVerticalAxis = 200;
 
         const float horizontalProportion = (float)mapWidth / pixelsInHorizontalAxis;
         const float verticalProportion = (float)mapHeight / pixelsInVerticalAxis;

@@ -198,7 +198,7 @@ public partial class MainWindow : INotifyPropertyChanged
 
     private void OnMouseWheel(object sender, MouseWheelEventArgs e)
     {
-        _positions.CameraPosition = _positions.CameraPosition with { X = _positions.CameraPosition.X - 0.01f * e.Delta };
+        _positions.CameraPosition = _positions.CameraPosition with { X = _positions.CameraPosition.X - 0.005f * e.Delta };
         Draw();
     }
 }
