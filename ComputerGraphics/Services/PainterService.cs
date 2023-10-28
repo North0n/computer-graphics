@@ -160,13 +160,9 @@ public static class PainterService
         var diffuse = Math.Max(0, Vector3.Dot(interpolatedNormal, lightDirection) / (lightLength * lightLength));
         var spectral = Math.Max(0, Vector3.Dot(viewDirection, Vector3.Reflect(lightDirection, interpolatedNormal)));
 
-        var color = AmbientWeight * AmbientColor
-            + DiffuseWeight * diffuse * DiffuseColor
-            + MathF.Pow(spectral, SpectralWeight) * SpectralColor;
-
-        return ((byte)Math.Max(0, Math.Min(color.X, 255)),
-            (byte)Math.Max(0, Math.Min(color.Y, 255)),
-            (byte)Math.Max(0, Math.Min(color.Z, 255)));
+        return (Math.Max(0, Math.Min(color.X, 1)),
+            Math.Max(0, Math.Min(color.Y, 1)),
+            Math.Max(0, Math.Min(color.Z, 1)))  ;
     }
 
     public static Bgra32Bitmap DrawModel(Vector4[] vertexes, Vector3[] normals, List<Triangle> triangles, int width,
@@ -269,7 +265,7 @@ public static class PainterService
         DrawLine(mapX, borderDistance + mapHeight / 2.0f, mapX + mapWidth, borderDistance + mapHeight / 2.0f, 0, 0, 0,
             bitmap);
 
-        DrawCircle(objectX, objectY, 5, 255, 0, 0, bitmap);
-        DrawCircle(cameraX, cameraY, 5, 0, 255, 0, bitmap);
+        DrawCircle(objectX, objectY, 5, 1, 0, 0, bitmap);
+        DrawCircle(cameraX, cameraY, 5, 0, 1, 0, bitmap);
     }
 }
