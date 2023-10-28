@@ -134,6 +134,20 @@ public static class PainterService
         }
     }
 
+    private static Vector3 AcesFilm(Vector3 x)
+    {
+        const float a = 2.51f;
+        Vector3 b = new(0.03f);
+        const float c = 2.43f;
+        Vector3 d = new(0.59f);
+        Vector3 e = new(0.14f);
+        return Vector3.Clamp((x * (a * x + b)) / (x * (c * x + d) + e), Vector3.Zero, Vector3.One);
+    }
+
+    private static Vector3 Pow(Vector3 color, float x)
+    {
+        return new Vector3(MathF.Pow(color.X, x), MathF.Pow(color.Y, x), MathF.Pow(color.Z, x));
+    }
 
     private static readonly Vector3 LightColor = new(1f, 1f, 1f);
     private const float LightIntensity = 80;
@@ -163,7 +177,7 @@ public static class PainterService
         var rDotV = Math.Max(0, Vector3.Dot(viewDirection, Vector3.Reflect(normLightDir, interpolatedNormal)));
         var specular = MathF.Pow(rDotV, 64) * ModelColor * irradiance;
 
-        var color = ambient + diffuse + specular;
+        var color = Pow(AcesFilm(ambient + diffuse + specular), 1 / 2.2f);
 
         return (Math.Max(0, Math.Min(color.X, 1)),
             Math.Max(0, Math.Min(color.Y, 1)),
