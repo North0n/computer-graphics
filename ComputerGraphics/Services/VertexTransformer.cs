@@ -33,7 +33,8 @@ namespace ComputerGraphics.Services
             }
         }
 
-        public static void TransformVertexes(ImageInfo info, double gridWidth, double gridHeight, Vector4[] result)
+        public static void TransformVertexes(ImageInfo info, double gridWidth, double gridHeight,
+            Vector4[] resultVertexes, Vector4[] worldVertexes)
         {
             const float xMin = 0;
             const float yMin = 0;
@@ -53,14 +54,15 @@ namespace ComputerGraphics.Services
             var viewPortMatrix = Matrix4x4Extension.CreateViewportLeftHanded(xMin, yMin, (float)gridWidth,
                 (float)gridHeight, minDepth, maxDepth);
 
-            var matrix = scaleMatrix * rotationMatrix * translationMatrix * viewMatrix * projectionMatrix;
+            var toWorld = scaleMatrix * rotationMatrix * translationMatrix;
             Parallel.ForEach(Partitioner.Create(0, info.Vertexes.Count), range =>
             {
                 for (var i = range.Item1; i < range.Item2; ++i)
                 {
-                    result[i] = Vector4.Transform(info.Vertexes[i], matrix);
-                    result[i] /= result[i].W;
-                    result[i] = Vector4.Transform(result[i], viewPortMatrix);
+                    worldVertexes[i] = Vector4.Transform(info.Vertexes[i], toWorld);
+                    resultVertexes[i] = Vector4.Transform(worldVertexes[i], viewMatrix * projectionMatrix);
+                    resultVertexes[i] /= resultVertexes[i].W;
+                    resultVertexes[i] = Vector4.Transform(resultVertexes[i], viewPortMatrix);
                 }
             });
         }

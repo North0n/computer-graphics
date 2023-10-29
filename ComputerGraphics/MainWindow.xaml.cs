@@ -28,6 +28,7 @@ public partial class MainWindow : INotifyPropertyChanged
     private List<Triangle> _triangles;
 
     private Vector4[] _transformedVertexes;
+    private Vector4[] _worldVertexes;
     private Vector3[] _transformedNormals;
 
     private bool _isMousePressed;
@@ -76,6 +77,7 @@ public partial class MainWindow : INotifyPropertyChanged
     {
         (_positions.Vertexes, _normals, _triangles) = ObjFileParser.Parse(File.ReadLines("amogus.obj"));
         _transformedVertexes = new Vector4[_positions.Vertexes.Count];
+        _worldVertexes = new Vector4[_positions.Vertexes.Count];
         _transformedNormals = new Vector3[_normals.Count];
         Draw();
     }
@@ -84,15 +86,15 @@ public partial class MainWindow : INotifyPropertyChanged
     {
         _stopwatch.Reset();
         _stopwatch.Start();
-        VertexTransformer.TransformVertexes(_positions, Grid.ActualWidth, Grid.ActualHeight, _transformedVertexes);
+        VertexTransformer.TransformVertexes(_positions, Grid.ActualWidth, Grid.ActualHeight, _transformedVertexes, _worldVertexes);
         VertexTransformer.TransformNormals(_normals, _positions, _transformedNormals);
-        var viewPosition = Vector3.Normalize(_positions.CameraTarget -
+        var viewDirection = Vector3.Normalize(_positions.CameraTarget -
                               VertexTransformer.ToOrthogonal(_positions.CameraPosition, _positions.CameraTarget));
-        var bitmap = PainterService.DrawModel(_transformedVertexes, _transformedNormals, _triangles,
+        var bitmap = PainterService.DrawModel(_transformedVertexes, _worldVertexes, _transformedNormals, _triangles,
             (int)Grid.ActualWidth,
             (int)Grid.ActualHeight, _zBuffer,
-            new Vector3(10, 0, 10),
-            viewPosition
+            VertexTransformer.ToOrthogonal(_positions.CameraPosition, _positions.CameraTarget),
+            viewDirection
         );
         PainterService.AddMinimapToBitmap(_positions, bitmap);
         Image.Source = bitmap.Source;
@@ -198,7 +200,7 @@ public partial class MainWindow : INotifyPropertyChanged
 
     private void OnMouseWheel(object sender, MouseWheelEventArgs e)
     {
-        _positions.CameraPosition = _positions.CameraPosition with { X = _positions.CameraPosition.X - 0.01f * e.Delta };
+        _positions.CameraPosition = _positions.CameraPosition with { X = _positions.CameraPosition.X - 0.005f * e.Delta };
         Draw();
     }
 }

@@ -23,15 +23,15 @@ namespace ComputerGraphics.Models
         public int PixelWidth { get; }
         public int PixelHeight { get; }
 
-        public void SetPixel(int x, int y, byte r, byte g, byte b)
+        public void SetPixel(int x, int y, float r, float g, float b)
         {
             if (x <= 0 || x >= PixelWidth || y <= 0 || y >= PixelHeight)
                 return;
 
             var address = _backBuffer + y * _backBufferStride + x * _bytesPerPixel;
-            address[0] = b;
-            address[1] = g;
-            address[2] = r;
+            address[0] = (byte)(255 * b);
+            address[1] = (byte)(255 * g);
+            address[2] = (byte)(255 * r);
             address[3] = 255;
         }
     }

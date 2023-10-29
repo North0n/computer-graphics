@@ -58,8 +58,31 @@ public static class PainterService
         }
     }
 
-    private static void DrawTriangle(List<Vector4> vertexes, List<Vector3> normals, Bgra32Bitmap bitmap,
-        float[,] zBuffer, Vector3 lightDirection, Vector3 viewDirection)
+    private static Vector3 GetInterpolatedWorldVertex(List<Vector4> vertexes, List<Vector4> worldVertexes, int x, int y,
+        float z)
+    {
+        var v1 = vertexes[0];
+        var v2 = vertexes[1];
+        var v3 = vertexes[2];
+
+        var vx = new Vector3(v3.X - v1.X, v2.X - v1.X, v1.X - x);
+        var vy = new Vector3(v3.Y - v1.Y, v2.Y - v1.Y, v1.Y - y);
+
+        var k = Vector3.Cross(vx, vy);
+        var k1 = 1 - (k.X + k.Y) / k.Z;
+        var k2 = k.Y / k.Z;
+        var k3 = k.X / k.Z;
+
+        var kp1 = k1 / v1.Z * z;
+        var kp2 = k2 / v2.Z * z;
+        var kp3 = k3 / v3.Z * z;
+
+        var res = worldVertexes[0] * kp1 + worldVertexes[1] * kp2 + worldVertexes[2] * kp3;
+        return new Vector3(res.X, res.Y, res.Z);
+    }
+
+    private static void DrawTriangle(List<Vector4> vertexes, List<Vector4> worldVertexes, List<Vector3> normals,
+        Bgra32Bitmap bitmap, float[,] zBuffer, Vector3 lightSourcePosition, Vector3 viewDirection)
     {
         if (IsBackFace(vertexes))
             return;
@@ -108,12 +131,13 @@ public static class PainterService
 
             for (var x = (int)a.X; x <= (int)b.X; x++)
             {
-                if (x >= bitmap.PixelWidth)
+                if (x >= bitmap.PixelWidth || x < 0)
                     break;
 
                 var p = (x - a.X) / deltaX;
 
                 var z = a.Z + p * (b.Z - a.Z);
+                var worldPos = GetInterpolatedWorldVertex(vertexes, worldVertexes, x, y, z);
 
                 var gotLock = false;
                 try
@@ -122,7 +146,8 @@ public static class PainterService
                     if (zBuffer[x, y] > z)
                     {
                         zBuffer[x, y] = z;
-                        (var red, var green, var blue) = GetPointColor(new Vector3(x, y, z), vertexes, normals, lightDirection, viewDirection);
+                        var (red, green, blue) = GetPointColor(new Vector3(x, y, z), vertexes, normals,
+                            lightSourcePosition - worldPos, viewDirection);
                         bitmap.SetPixel(x, y, red, green, blue);
                     }
                 }
@@ -134,14 +159,27 @@ public static class PainterService
         }
     }
 
-    private static readonly Vector3 AmbientColor = new Vector3(20, 30, 60);
-    private static readonly Vector3 DiffuseColor = new(50, 100, 230);
-    private static readonly Vector3 SpectralColor = new Vector3(255, 255, 255) / 50000;
-    private const float AmbientWeight = 0.5f;
-    private const float DiffuseWeight = 10f;
-    private const float SpectralWeight = 4f;
+    private static Vector3 AcesFilm(Vector3 x)
+    {
+        const float a = 2.51f;
+        Vector3 b = new(0.03f);
+        const float c = 2.43f;
+        Vector3 d = new(0.59f);
+        Vector3 e = new(0.14f);
+        return Vector3.Clamp((x * (a * x + b)) / (x * (c * x + d) + e), Vector3.Zero, Vector3.One);
+    }
 
-    private static (byte R, byte G, byte B) GetPointColor(Vector3 point, List<Vector4> vertexes, List<Vector3> normals,
+    private static Vector3 Pow(Vector3 color, float x)
+    {
+        return new Vector3(MathF.Pow(color.X, x), MathF.Pow(color.Y, x), MathF.Pow(color.Z, x));
+    }
+
+    private static readonly Vector3 LightColor = new(1f, 1f, 1f);
+    private const float LightIntensity = 80;
+    private const float AmbientLightIntensity = 0.1f;
+    private static readonly Vector3 ModelColor = new(0.8f, 0.2f, 0.8f);
+
+    private static (float R, float G, float B) GetPointColor(Vector3 point, List<Vector4> vertexes, List<Vector3> normals,
         Vector3 lightDirection, Vector3 viewDirection)
     {
         var a = new Vector3(vertexes[0].X, vertexes[0].Y, vertexes[0].Z);
@@ -155,22 +193,25 @@ public static class PainterService
         var w = Vector3.Cross(b - a, point - a).Length() / area;
 
         var interpolatedNormal = Vector3.Normalize(u * normals[0] + v * normals[1] + w * normals[2]);
-        var lightLength = lightDirection.Length();
+        var lightDistSqr = lightDirection.LengthSquared();
+        var ambient = AmbientLightIntensity * LightColor * ModelColor;
+        var normLightDir = Vector3.Normalize(lightDirection);
+        var nDotL = Math.Max(0, Vector3.Dot(interpolatedNormal, normLightDir));
+        var irradiance = LightColor * LightIntensity * nDotL / lightDistSqr;
+        var diffuse = irradiance * ModelColor;
+        var rDotV = Math.Max(0, Vector3.Dot(viewDirection, Vector3.Reflect(normLightDir, interpolatedNormal)));
+        var specular = MathF.Pow(rDotV, 64) * ModelColor * irradiance;
 
-        var diffuse = Math.Max(0, Vector3.Dot(interpolatedNormal, lightDirection) / (lightLength * lightLength));
-        var spectral = Math.Max(0, Vector3.Dot(viewDirection, Vector3.Reflect(lightDirection, interpolatedNormal)));
+        var color = Pow(AcesFilm(ambient + diffuse + specular), 1 / 2.2f);
 
-        var color = AmbientWeight * AmbientColor
-            + DiffuseWeight * diffuse * DiffuseColor
-            + MathF.Pow(spectral, SpectralWeight) * SpectralColor;
-
-        return ((byte)Math.Max(0, Math.Min(color.X, 255)),
-            (byte)Math.Max(0, Math.Min(color.Y, 255)),
-            (byte)Math.Max(0, Math.Min(color.Z, 255)));
+        return (Math.Max(0, Math.Min(color.X, 1)),
+            Math.Max(0, Math.Min(color.Y, 1)),
+            Math.Max(0, Math.Min(color.Z, 1)))  ;
     }
 
-    public static Bgra32Bitmap DrawModel(Vector4[] vertexes, Vector3[] normals, List<Triangle> triangles, int width,
-        int height, float[,] zBuffer, Vector3 lightDirection, Vector3 viewDirection)
+    public static Bgra32Bitmap DrawModel(Vector4[] vertexes, Vector4[] worldVertexes, Vector3[] normals,
+        List<Triangle> triangles, int width, int height, float[,] zBuffer, Vector3 lightSourcePosition,
+        Vector3 viewDirection)
     {
         InitializeSpinLocks(width, height);
         
@@ -191,7 +232,8 @@ public static class PainterService
             {
                 var idxs = triangles[j].Indexes;
                 DrawTriangle(idxs.Select(idx => vertexes[idx.Vertex]).ToList(),
-                    idxs.Select(idx => normals[idx.Normal]).ToList(), bitmap, zBuffer, lightDirection, viewDirection);
+                    idxs.Select(idx => worldVertexes[idx.Vertex]).ToList(),
+                    idxs.Select(idx => normals[idx.Normal]).ToList(), bitmap, zBuffer, lightSourcePosition, viewDirection);
             }
         });
 
@@ -243,8 +285,8 @@ public static class PainterService
         var startX = mapX + mapWidth / 2;
         const int startY = borderDistance + mapHeight / 2;
 
-        const int pixelsInHorizontalAxis = 8000;
-        const int pixelsInVerticalAxis = 8000;
+        const int pixelsInHorizontalAxis = 200;
+        const int pixelsInVerticalAxis = 200;
 
         const float horizontalProportion = (float)mapWidth / pixelsInHorizontalAxis;
         const float verticalProportion = (float)mapHeight / pixelsInVerticalAxis;
@@ -269,7 +311,7 @@ public static class PainterService
         DrawLine(mapX, borderDistance + mapHeight / 2.0f, mapX + mapWidth, borderDistance + mapHeight / 2.0f, 0, 0, 0,
             bitmap);
 
-        DrawCircle(objectX, objectY, 5, 255, 0, 0, bitmap);
-        DrawCircle(cameraX, cameraY, 5, 0, 255, 0, bitmap);
+        DrawCircle(objectX, objectY, 5, 1, 0, 0, bitmap);
+        DrawCircle(cameraX, cameraY, 5, 0, 1, 0, bitmap);
     }
 }
