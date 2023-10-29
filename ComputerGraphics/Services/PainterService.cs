@@ -58,8 +58,31 @@ public static class PainterService
         }
     }
 
-    private static void DrawTriangle(List<Vector4> vertexes, List<Vector3> normals, Bgra32Bitmap bitmap,
-        float[,] zBuffer, Vector3 lightDirection, Vector3 viewDirection)
+    private static Vector3 GetInterpolatedWorldVertex(List<Vector4> vertexes, List<Vector4> worldVertexes, int x, int y,
+        float z)
+    {
+        var v1 = vertexes[0];
+        var v2 = vertexes[1];
+        var v3 = vertexes[2];
+
+        var vx = new Vector3(v3.X - v1.X, v2.X - v1.X, v1.X - x);
+        var vy = new Vector3(v3.Y - v1.Y, v2.Y - v1.Y, v1.Y - y);
+
+        var k = Vector3.Cross(vx, vy);
+        var k1 = 1 - (k.X + k.Y) / k.Z;
+        var k2 = k.Y / k.Z;
+        var k3 = k.X / k.Z;
+
+        var kp1 = k1 / v1.Z * z;
+        var kp2 = k2 / v2.Z * z;
+        var kp3 = k3 / v3.Z * z;
+
+        var res = worldVertexes[0] * kp1 + worldVertexes[1] * kp2 + worldVertexes[2] * kp3;
+        return new Vector3(res.X, res.Y, res.Z);
+    }
+
+    private static void DrawTriangle(List<Vector4> vertexes, List<Vector4> worldVertexes, List<Vector3> normals,
+        Bgra32Bitmap bitmap, float[,] zBuffer, Vector3 lightSourcePosition, Vector3 viewDirection)
     {
         if (IsBackFace(vertexes))
             return;
@@ -108,12 +131,13 @@ public static class PainterService
 
             for (var x = (int)a.X; x <= (int)b.X; x++)
             {
-                if (x >= bitmap.PixelWidth)
+                if (x >= bitmap.PixelWidth || x < 0)
                     break;
 
                 var p = (x - a.X) / deltaX;
 
                 var z = a.Z + p * (b.Z - a.Z);
+                var worldPos = GetInterpolatedWorldVertex(vertexes, worldVertexes, x, y, z);
 
                 var gotLock = false;
                 try
@@ -122,7 +146,8 @@ public static class PainterService
                     if (zBuffer[x, y] > z)
                     {
                         zBuffer[x, y] = z;
-                        (var red, var green, var blue) = GetPointColor(new Vector3(x, y, z), vertexes, normals, lightDirection, viewDirection);
+                        var (red, green, blue) = GetPointColor(new Vector3(x, y, z), vertexes, normals,
+                            lightSourcePosition - worldPos, viewDirection);
                         bitmap.SetPixel(x, y, red, green, blue);
                     }
                 }
@@ -184,8 +209,9 @@ public static class PainterService
             Math.Max(0, Math.Min(color.Z, 1)))  ;
     }
 
-    public static Bgra32Bitmap DrawModel(Vector4[] vertexes, Vector3[] normals, List<Triangle> triangles, int width,
-        int height, float[,] zBuffer, Vector3 lightDirection, Vector3 viewDirection)
+    public static Bgra32Bitmap DrawModel(Vector4[] vertexes, Vector4[] worldVertexes, Vector3[] normals,
+        List<Triangle> triangles, int width, int height, float[,] zBuffer, Vector3 lightSourcePosition,
+        Vector3 viewDirection)
     {
         InitializeSpinLocks(width, height);
         
@@ -206,7 +232,8 @@ public static class PainterService
             {
                 var idxs = triangles[j].Indexes;
                 DrawTriangle(idxs.Select(idx => vertexes[idx.Vertex]).ToList(),
-                    idxs.Select(idx => normals[idx.Normal]).ToList(), bitmap, zBuffer, lightDirection, viewDirection);
+                    idxs.Select(idx => worldVertexes[idx.Vertex]).ToList(),
+                    idxs.Select(idx => normals[idx.Normal]).ToList(), bitmap, zBuffer, lightSourcePosition, viewDirection);
             }
         });
 
