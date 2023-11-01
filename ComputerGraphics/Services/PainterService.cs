@@ -58,29 +58,6 @@ public static class PainterService
         }
     }
 
-    private static Vector3 GetInterpolatedWorldVertex(List<Vector4> vertexes, List<Vector4> worldVertexes, int x, int y,
-        float z)
-    {
-        var v1 = vertexes[0];
-        var v2 = vertexes[1];
-        var v3 = vertexes[2];
-
-        var vx = new Vector3(v3.X - v1.X, v2.X - v1.X, v1.X - x);
-        var vy = new Vector3(v3.Y - v1.Y, v2.Y - v1.Y, v1.Y - y);
-
-        var k = Vector3.Cross(vx, vy);
-        var k1 = 1 - (k.X + k.Y) / k.Z;
-        var k2 = k.Y / k.Z;
-        var k3 = k.X / k.Z;
-
-        var kp1 = k1 / v1.Z * z;
-        var kp2 = k2 / v2.Z * z;
-        var kp3 = k3 / v3.Z * z;
-
-        var res = worldVertexes[0] * kp1 + worldVertexes[1] * kp2 + worldVertexes[2] * kp3;
-        return new Vector3(res.X, res.Y, res.Z);
-    }
-
     private static void DrawTriangle(List<Vector4> vertexes, List<Vector4> worldVertexes, List<Vector3> normals,
         Bgra32Bitmap bitmap, float[,] zBuffer, Vector3 lightSourcePosition, Vector3 viewDirection)
     {
@@ -137,8 +114,9 @@ public static class PainterService
                 var p = (x - a.X) / deltaX;
 
                 var z = a.Z + p * (b.Z - a.Z);
-                var worldPos = GetInterpolatedWorldVertex(vertexes, worldVertexes, x, y, z);
 
+                var (red, green, blue) = GetPointColor(new Vector3(x, y, z), vertexes, normals, worldVertexes,
+                    lightSourcePosition, viewDirection);
                 var gotLock = false;
                 try
                 {
@@ -146,8 +124,6 @@ public static class PainterService
                     if (zBuffer[x, y] > z)
                     {
                         zBuffer[x, y] = z;
-                        var (red, green, blue) = GetPointColor(new Vector3(x, y, z), vertexes, normals,
-                            lightSourcePosition - worldPos, viewDirection);
                         bitmap.SetPixel(x, y, red, green, blue);
                     }
                 }
@@ -180,7 +156,7 @@ public static class PainterService
     private static readonly Vector3 ModelColor = new(0.8f, 0.2f, 0.8f);
 
     private static (float R, float G, float B) GetPointColor(Vector3 point, List<Vector4> vertexes, List<Vector3> normals,
-        Vector3 lightDirection, Vector3 viewDirection)
+        List<Vector4> worldVertexes, Vector3 lightSourcePosition, Vector3 viewDirection)
     {
         var a = new Vector3(vertexes[0].X, vertexes[0].Y, vertexes[0].Z);
         var b = new Vector3(vertexes[1].X, vertexes[1].Y, vertexes[1].Z);
@@ -191,6 +167,10 @@ public static class PainterService
         var u = Vector3.Cross(c - b, point - b).Length() / area;
         var v = Vector3.Cross(a - c, point - c).Length() / area;
         var w = Vector3.Cross(b - a, point - a).Length() / area;
+
+        var worldPosV4 = u * worldVertexes[0] + v * worldVertexes[1] + w * worldVertexes[2];
+        var worldPos = new Vector3(worldPosV4.X, worldPosV4.Y, worldPosV4.Z);
+        var lightDirection = lightSourcePosition - worldPos;
 
         var interpolatedNormal = Vector3.Normalize(u * normals[0] + v * normals[1] + w * normals[2]);
         var lightDistSqr = lightDirection.LengthSquared();
