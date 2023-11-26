@@ -54,17 +54,19 @@ namespace ComputerGraphics.Services
                             var indexes = argsIndexes[0].Split('/');
                             var triangleIndexes = new TriangleIndexes[]
                             {
-                                new(int.Parse(indexes[0]) - 1,
-                                    int.Parse(indexes[1]) - 1,
-                                    int.Parse(indexes[2]) - 1),
+                                new(indexes.Length > 0 ? int.Parse(indexes[0]) - 1 : -1,
+                                    indexes.Length > 1 ? int.Parse(indexes[1]) - 1 : -1,
+                                    indexes.Length > 2 ? int.Parse(indexes[2]) - 1 : -1),
                                 new(),
                                 new()
                             };
                             for (var j = 1; j < 3; ++j)
                             {
                                 indexes = argsIndexes[(j + i) % argsIndexes.Count].Split('/');
-                                triangleIndexes[j] = new TriangleIndexes(int.Parse(indexes[0]) - 1,
-                                    int.Parse(indexes[1]) - 1, int.Parse(indexes[2]) - 1);
+                                triangleIndexes[j] = new TriangleIndexes(
+                                    indexes.Length > 0 ? int.Parse(indexes[0]) - 1 : -1,
+                                    indexes.Length > 1 ? int.Parse(indexes[1]) - 1 : -1,
+                                    indexes.Length > 2 ? int.Parse(indexes[2]) - 1 : -1);
                             }
                             triangles.Add(new Triangle(triangleIndexes, currentMaterial));
                         }

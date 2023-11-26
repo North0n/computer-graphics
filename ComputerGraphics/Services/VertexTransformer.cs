@@ -69,6 +69,9 @@ namespace ComputerGraphics.Services
 
         public static void TransformNormals(List<Vector3> normals, ImageInfo info, Vector3[] result)
         {
+            if (normals.Count == 0)
+                return;
+
             var rotationMatrix = Matrix4x4.CreateRotationX(info.RotationX) * Matrix4x4.CreateRotationY(info.RotationY);
             Parallel.ForEach(Partitioner.Create(0, normals.Count), range =>
             {
