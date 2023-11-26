@@ -19,11 +19,11 @@ public static class PainterService
         return (int)Math.Round(x, MidpointRounding.AwayFromZero);
     }
 
-    private static bool IsBackFace(IReadOnlyList<Vector4> vertexes)
+    private static bool IsBackFace(IReadOnlyList<Vector4> vertexes, Triangle triangle)
     {
-        var a = vertexes[0];
-        var b = vertexes[1];
-        var c = vertexes[2];
+        var a = vertexes[triangle.Indexes[0].Vertex];
+        var b = vertexes[triangle.Indexes[1].Vertex];
+        var c = vertexes[triangle.Indexes[2].Vertex];
 
         var ab = b - a;
         var ac = c - a;
@@ -58,15 +58,15 @@ public static class PainterService
         }
     }
 
-    private static void DrawTriangle(List<Vector4> vertexes, List<Vector4> worldVertexes, List<Vector3> normals,
-        Bgra32Bitmap bitmap, float[,] zBuffer, LightSource[] lightSources, Vector3 viewDirection)
+    private static void DrawTriangle(IReadOnlyList<Vector4> vertexes, IReadOnlyList<Vector4> worldVertexes, IReadOnlyList<Vector3> normals,
+        Bgra32Bitmap bitmap, float[,] zBuffer, LightSource[] lightSources, Vector3 viewDirection, Triangle triangle)
     {
-        if (IsBackFace(vertexes))
+        if (IsBackFace(vertexes, triangle))
             return;
 
-        var up = vertexes[2];
-        var mid = vertexes[1];
-        var down = vertexes[0];
+        var up = vertexes[triangle.Indexes[2].Vertex];
+        var mid = vertexes[triangle.Indexes[1].Vertex];
+        var down = vertexes[triangle.Indexes[0].Vertex];
 
         if (down.Y > mid.Y)
             (down, mid) = (mid, down);
@@ -116,7 +116,7 @@ public static class PainterService
                 var z = a.Z + p * (b.Z - a.Z);
 
                 var (red, green, blue) = GetPointColor(new Vector3(x, y, z), vertexes, normals, worldVertexes,
-                    lightSources, viewDirection);
+                    lightSources, viewDirection, triangle);
                 var gotLock = false;
                 try
                 {
@@ -183,12 +183,12 @@ public static class PainterService
         return diffuse + specular;
     }
 
-    private static Vector3 GetInterpolatedWorldVertex(List<Vector4> vertexes, List<Vector4> worldVertexes, int x, int y,
-        float z)
+    private static Vector3 GetInterpolatedWorldVertex(IReadOnlyList<Vector4> vertexes, IReadOnlyList<Vector4> worldVertexes, int x, int y,
+        float z, Triangle triangle)
     {
-        var v1 = vertexes[0];
-        var v2 = vertexes[1];
-        var v3 = vertexes[2];
+        var v1 = vertexes[triangle.Indexes[0].Vertex];
+        var v2 = vertexes[triangle.Indexes[1].Vertex];
+        var v3 = vertexes[triangle.Indexes[2].Vertex];
 
         var vx = new Vector3(v3.X - v1.X, v2.X - v1.X, v1.X - x);
         var vy = new Vector3(v3.Y - v1.Y, v2.Y - v1.Y, v1.Y - y);
@@ -202,16 +202,16 @@ public static class PainterService
         var kp2 = k2 / v2.Z * z;
         var kp3 = k3 / v3.Z * z;
 
-        var res = worldVertexes[0] * kp1 + worldVertexes[1] * kp2 + worldVertexes[2] * kp3;
+        var res = worldVertexes[triangle.Indexes[0].Vertex] * kp1 + worldVertexes[triangle.Indexes[1].Vertex] * kp2 + worldVertexes[triangle.Indexes[2].Vertex] * kp3;
         return new Vector3(res.X, res.Y, res.Z);
     }
 
-    private static (float R, float G, float B) GetPointColor(Vector3 point, List<Vector4> vertexes, List<Vector3> normals,
-        List<Vector4> worldVertexes, LightSource[] lightSources, Vector3 viewDirection)
+    private static (float R, float G, float B) GetPointColor(Vector3 point, IReadOnlyList<Vector4> vertexes, IReadOnlyList<Vector3> normals,
+        IReadOnlyList<Vector4> worldVertexes, LightSource[] lightSources, Vector3 viewDirection, Triangle triangle)
     {
-        var a = new Vector3(vertexes[0].X, vertexes[0].Y, vertexes[0].Z);
-        var b = new Vector3(vertexes[1].X, vertexes[1].Y, vertexes[1].Z);
-        var c = new Vector3(vertexes[2].X, vertexes[2].Y, vertexes[2].Z);
+        var a = new Vector3(vertexes[triangle.Indexes[0].Vertex].X, vertexes[triangle.Indexes[0].Vertex].Y, vertexes[triangle.Indexes[0].Vertex].Z);
+        var b = new Vector3(vertexes[triangle.Indexes[1].Vertex].X, vertexes[triangle.Indexes[1].Vertex].Y, vertexes[triangle.Indexes[1].Vertex].Z);
+        var c = new Vector3(vertexes[triangle.Indexes[2].Vertex].X, vertexes[triangle.Indexes[2].Vertex].Y, vertexes[triangle.Indexes[2].Vertex].Z);
 
         var area = Vector3.Cross(b - a, c - a).Length();
 
@@ -219,8 +219,8 @@ public static class PainterService
         var v = Vector3.Cross(a - c, point - c).Length() / area;
         var w = Vector3.Cross(b - a, point - a).Length() / area;
 
-        var worldPos = GetInterpolatedWorldVertex(vertexes, worldVertexes, (int)point.X, (int)point.Y, point.Z);
-        var interpolatedNormal = Vector3.Normalize(u * normals[0] + v * normals[1] + w * normals[2]);
+        var worldPos = GetInterpolatedWorldVertex(vertexes, worldVertexes, (int)point.X, (int)point.Y, point.Z, triangle);
+        var interpolatedNormal = Vector3.Normalize(u * normals[triangle.Indexes[0].Normal] + v * normals[triangle.Indexes[1].Normal] + w * normals[triangle.Indexes[2].Normal]);
         var ambient = AmbientLightIntensity * ModelAmbientConsumption * ModelColor;
 
         var sum = lightSources.Aggregate(Vector3.Zero,
@@ -254,10 +254,7 @@ public static class PainterService
         {
             for (var j = range.Item1; j < range.Item2; ++j)
             {
-                var idxs = triangles[j].Indexes;
-                DrawTriangle(idxs.Select(idx => vertexes[idx.Vertex]).ToList(),
-                    idxs.Select(idx => worldVertexes[idx.Vertex]).ToList(),
-                    idxs.Select(idx => normals[idx.Normal]).ToList(), bitmap, zBuffer, lightSources, viewDirection);
+                DrawTriangle(vertexes, worldVertexes, normals, bitmap, zBuffer, lightSources, viewDirection, triangles[j]);
             }
         });
 
