@@ -169,6 +169,30 @@ public static class PainterService
     private const float AmbientLightIntensity = 0.1f;
     private static readonly Vector3 ModelColor = new(0.8f, 0.2f, 0.8f);
 
+
+    private static Vector3 GetInterpolatedWorldVertex(List<Vector4> vertexes, List<Vector4> worldVertexes, int x, int y,
+        float z)
+    {
+        var v1 = vertexes[0];
+        var v2 = vertexes[1];
+        var v3 = vertexes[2];
+
+        var vx = new Vector3(v3.X - v1.X, v2.X - v1.X, v1.X - x);
+        var vy = new Vector3(v3.Y - v1.Y, v2.Y - v1.Y, v1.Y - y);
+
+        var k = Vector3.Cross(vx, vy);
+        var k1 = 1 - (k.X + k.Y) / k.Z;
+        var k2 = k.Y / k.Z;
+        var k3 = k.X / k.Z;
+
+        var kp1 = k1 / v1.Z * z;
+        var kp2 = k2 / v2.Z * z;
+        var kp3 = k3 / v3.Z * z;
+
+        var res = worldVertexes[0] * kp1 + worldVertexes[1] * kp2 + worldVertexes[2] * kp3;
+        return new Vector3(res.X, res.Y, res.Z);
+    }
+
     private static (float R, float G, float B) GetPointColor(Vector3 point, List<Vector4> vertexes, List<Vector3> normals,
         List<Vector4> worldVertexes, Vector3 lightSourcePosition, Vector3 viewDirection)
     {
@@ -182,10 +206,9 @@ public static class PainterService
         var v = Vector3.Cross(a - c, point - c).Length() / area;
         var w = Vector3.Cross(b - a, point - a).Length() / area;
 
-        var worldPosV4 = u * worldVertexes[0] + v * worldVertexes[1] + w * worldVertexes[2];
-        var worldPos = new Vector3(worldPosV4.X, worldPosV4.Y, worldPosV4.Z);
         var lightDirection = lightSourcePosition - worldPos;
 
+        var worldPos = GetInterpolatedWorldVertex(vertexes, worldVertexes, (int)point.X, (int)point.Y, point.Z);
         var interpolatedNormal = Vector3.Normalize(u * normals[0] + v * normals[1] + w * normals[2]);
         var lightDistSqr = lightDirection.LengthSquared();
         var ambient = AmbientLightIntensity * LightColor * ModelColor;
