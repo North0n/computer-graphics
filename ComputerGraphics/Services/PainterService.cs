@@ -165,6 +165,7 @@ public static class PainterService
     }
 
     private const float AmbientLightIntensity = 0.1f;
+    private static readonly Vector3 ModelAmbientConsumption = new(0.5f, 0.5f, 0.5f);
     private static readonly Vector3 ModelColor = new(0.8f, 0.2f, 0.8f);
 
     private static Vector3 GetDiffusePlusSpecular(LightSource lightSource, Vector3 worldPos,
@@ -220,7 +221,7 @@ public static class PainterService
 
         var worldPos = GetInterpolatedWorldVertex(vertexes, worldVertexes, (int)point.X, (int)point.Y, point.Z);
         var interpolatedNormal = Vector3.Normalize(u * normals[0] + v * normals[1] + w * normals[2]);
-        var ambient = AmbientLightIntensity * new Vector3(0.5f, 0.5f, 0.5f) * ModelColor;
+        var ambient = AmbientLightIntensity * ModelAmbientConsumption * ModelColor;
 
         var sum = lightSources.Aggregate(Vector3.Zero,
             (current, lightSource) =>
