@@ -99,6 +99,8 @@ public static class ColorService
         var vy = new Vector3(v3.Y - v1.Y, v2.Y - v1.Y, v1.Y - y);
 
         var k = Vector3.Cross(vx, vy);
+        if (k.Z == 0)
+            k.Z = 1;
         var k1 = 1 - (k.X + k.Y) / k.Z;
         var k2 = k.Y / k.Z;
         var k3 = k.X / k.Z;
