@@ -8,4 +8,8 @@
         <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     </PropertyGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Pfim" Version="0.11.2" />
+    </ItemGroup>
+
 </Project>

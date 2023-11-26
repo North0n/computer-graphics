@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -25,6 +23,7 @@ public partial class MainWindow : INotifyPropertyChanged
     };
 
     private List<Vector3> _normals;
+    private List<Vector3> _textures;
     private List<Triangle> _triangles;
 
     private Vector4[] _transformedVertexes;
@@ -75,7 +74,7 @@ public partial class MainWindow : INotifyPropertyChanged
 
     private void OnWindowLoaded(object sender, RoutedEventArgs e)
     {
-        (_positions.Vertexes, _normals, _triangles) = ObjFileParser.Parse(File.ReadLines("Shovel Knight/shovel_low.obj"));
+        (_positions.Vertexes, _textures, _normals, _triangles) = ObjFileParser.Parse("Shovel Knight/shovel_low.obj");
         _transformedVertexes = new Vector4[_positions.Vertexes.Count];
         _worldVertexes = new Vector4[_positions.Vertexes.Count];
         _transformedNormals = new Vector3[_normals.Count];
