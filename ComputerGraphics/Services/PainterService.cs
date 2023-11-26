@@ -59,7 +59,7 @@ public static class PainterService
     }
 
     private static void DrawTriangle(List<Vector4> vertexes, List<Vector4> worldVertexes, List<Vector3> normals,
-        Bgra32Bitmap bitmap, float[,] zBuffer, Vector3 lightSourcePosition, Vector3 viewDirection)
+        Bgra32Bitmap bitmap, float[,] zBuffer, LightSource[] lightSources, Vector3 viewDirection)
     {
         if (IsBackFace(vertexes))
             return;
@@ -116,7 +116,7 @@ public static class PainterService
                 var z = a.Z + p * (b.Z - a.Z);
 
                 var (red, green, blue) = GetPointColor(new Vector3(x, y, z), vertexes, normals, worldVertexes,
-                    lightSourcePosition, viewDirection);
+                    lightSources, viewDirection);
                 var gotLock = false;
                 try
                 {
@@ -164,11 +164,23 @@ public static class PainterService
         return new(LinearToSrgb(color.X), LinearToSrgb(color.Y), LinearToSrgb(color.Z));
     }
 
-    private static readonly Vector3 LightColor = new(1f, 1f, 1f);
-    private const float LightIntensity = 80;
     private const float AmbientLightIntensity = 0.1f;
     private static readonly Vector3 ModelColor = new(0.8f, 0.2f, 0.8f);
 
+    private static Vector3 GetDiffusePlusSpecular(LightSource lightSource, Vector3 worldPos,
+        Vector3 interpolatedNormal, Vector3 viewDirection)
+    {
+        var lightDirection = lightSource.Position - worldPos;
+        var lightDistSqr = lightDirection.LengthSquared();
+        var normLightDir = Vector3.Normalize(lightDirection);
+        var nDotL = Math.Max(0, Vector3.Dot(interpolatedNormal, normLightDir));
+        var irradiance = lightSource.Color * lightSource.Intensity * nDotL / lightDistSqr;
+        var diffuse = irradiance * ModelColor;
+        var rDotV = Math.Max(0, Vector3.Dot(viewDirection, Vector3.Reflect(normLightDir, interpolatedNormal)));
+        var specular = MathF.Pow(rDotV, 64) * ModelColor * irradiance;
+
+        return diffuse + specular;
+    }
 
     private static Vector3 GetInterpolatedWorldVertex(List<Vector4> vertexes, List<Vector4> worldVertexes, int x, int y,
         float z)
@@ -194,7 +206,7 @@ public static class PainterService
     }
 
     private static (float R, float G, float B) GetPointColor(Vector3 point, List<Vector4> vertexes, List<Vector3> normals,
-        List<Vector4> worldVertexes, Vector3 lightSourcePosition, Vector3 viewDirection)
+        List<Vector4> worldVertexes, LightSource[] lightSources, Vector3 viewDirection)
     {
         var a = new Vector3(vertexes[0].X, vertexes[0].Y, vertexes[0].Z);
         var b = new Vector3(vertexes[1].X, vertexes[1].Y, vertexes[1].Z);
@@ -206,20 +218,14 @@ public static class PainterService
         var v = Vector3.Cross(a - c, point - c).Length() / area;
         var w = Vector3.Cross(b - a, point - a).Length() / area;
 
-        var lightDirection = lightSourcePosition - worldPos;
-
         var worldPos = GetInterpolatedWorldVertex(vertexes, worldVertexes, (int)point.X, (int)point.Y, point.Z);
         var interpolatedNormal = Vector3.Normalize(u * normals[0] + v * normals[1] + w * normals[2]);
-        var lightDistSqr = lightDirection.LengthSquared();
-        var ambient = AmbientLightIntensity * LightColor * ModelColor;
-        var normLightDir = Vector3.Normalize(lightDirection);
-        var nDotL = Math.Max(0, Vector3.Dot(interpolatedNormal, normLightDir));
-        var irradiance = LightColor * LightIntensity * nDotL / lightDistSqr;
-        var diffuse = irradiance * ModelColor;
-        var rDotV = Math.Max(0, Vector3.Dot(viewDirection, Vector3.Reflect(normLightDir, interpolatedNormal)));
-        var specular = MathF.Pow(rDotV, 64) * ModelColor * irradiance;
+        var ambient = AmbientLightIntensity * new Vector3(0.5f, 0.5f, 0.5f) * ModelColor;
 
-        var color = Pow(AcesFilm(ambient + diffuse + specular), 1 / 2.2f);
+        var sum = lightSources.Aggregate(Vector3.Zero,
+            (current, lightSource) =>
+                current + GetDiffusePlusSpecular(lightSource, worldPos, interpolatedNormal, viewDirection));
+        var color = LinearToSrgb(AcesFilm(ambient + sum));
 
         return (Math.Max(0, Math.Min(color.X, 1)),
             Math.Max(0, Math.Min(color.Y, 1)),
@@ -227,7 +233,7 @@ public static class PainterService
     }
 
     public static Bgra32Bitmap DrawModel(Vector4[] vertexes, Vector4[] worldVertexes, Vector3[] normals,
-        List<Triangle> triangles, int width, int height, float[,] zBuffer, Vector3 lightSourcePosition,
+        List<Triangle> triangles, int width, int height, float[,] zBuffer, LightSource[] lightSources,
         Vector3 viewDirection)
     {
         InitializeSpinLocks(width, height);
@@ -250,7 +256,7 @@ public static class PainterService
                 var idxs = triangles[j].Indexes;
                 DrawTriangle(idxs.Select(idx => vertexes[idx.Vertex]).ToList(),
                     idxs.Select(idx => worldVertexes[idx.Vertex]).ToList(),
-                    idxs.Select(idx => normals[idx.Normal]).ToList(), bitmap, zBuffer, lightSourcePosition, viewDirection);
+                    idxs.Select(idx => normals[idx.Normal]).ToList(), bitmap, zBuffer, lightSources, viewDirection);
             }
         });
 

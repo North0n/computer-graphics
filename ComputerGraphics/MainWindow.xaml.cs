@@ -82,20 +82,29 @@ public partial class MainWindow : INotifyPropertyChanged
         Draw();
     }
 
+    private const float CoeffY = -4;
+    private const float CoeffD = 2;
+
+    private static readonly LightSource[] LightSources = {
+        new(Vector3.Zero, new(1f, 1f, 1f), 50f),
+        // new(new(CoeffD, -CoeffY, CoeffD), new(1, 0, 0), 80f),
+        // new(new(-CoeffD, -CoeffY, CoeffD), new(0, 1, 0), 80f),
+        // new(new(CoeffD, -CoeffY, -CoeffD), new(0, 0, 1), 80f),
+        // new(new(-CoeffD, -CoeffY, -CoeffD), new(1, 1, 1), 80f),
+    };
+
     private void Draw()
     {
         _stopwatch.Reset();
         _stopwatch.Start();
+        LightSources[0].Position = VertexTransformer.ToOrthogonal(_positions.CameraPosition, _positions.CameraTarget);
+
         VertexTransformer.TransformVertexes(_positions, Grid.ActualWidth, Grid.ActualHeight, _transformedVertexes, _worldVertexes);
         VertexTransformer.TransformNormals(_normals, _positions, _transformedNormals);
         var viewDirection = Vector3.Normalize(_positions.CameraTarget -
                               VertexTransformer.ToOrthogonal(_positions.CameraPosition, _positions.CameraTarget));
         var bitmap = PainterService.DrawModel(_transformedVertexes, _worldVertexes, _transformedNormals, _triangles,
-            (int)Grid.ActualWidth,
-            (int)Grid.ActualHeight, _zBuffer,
-            VertexTransformer.ToOrthogonal(_positions.CameraPosition, _positions.CameraTarget),
-            viewDirection
-        );
+            (int)Grid.ActualWidth, (int)Grid.ActualHeight, _zBuffer, LightSources, viewDirection);
         PainterService.AddMinimapToBitmap(_positions, bitmap);
         Image.Source = bitmap.Source;
         _stopwatch.Stop();
