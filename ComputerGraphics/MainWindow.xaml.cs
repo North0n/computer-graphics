@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Input;
 using ComputerGraphics.Models;
 using ComputerGraphics.Services;
+using Microsoft.Win32;
 
 namespace ComputerGraphics;
 
@@ -74,11 +75,16 @@ public partial class MainWindow : INotifyPropertyChanged
 
     private void OnWindowLoaded(object sender, RoutedEventArgs e)
     {
-        (_positions.Vertexes, _textures, _normals, _triangles) = ObjFileParser.Parse("Shovel Knight/shovel_low.obj");
+        LoadFile("Shovel Knight/shovel_low.obj");
+        Draw();
+    }
+
+    private void LoadFile(string fileName)
+    {
+        (_positions.Vertexes, _textures, _normals, _triangles) = ObjFileParser.Parse(fileName);
         _transformedVertexes = new Vector4[_positions.Vertexes.Count];
         _worldVertexes = new Vector4[_positions.Vertexes.Count];
         _transformedNormals = new Vector3[_normals.Count];
-        Draw();
     }
 
     private const float CoeffY = -4;
@@ -158,6 +164,18 @@ public partial class MainWindow : INotifyPropertyChanged
                 {
                     X = _positions.CameraTarget.X - MoveSpeed
                 };
+                break;
+            case Key.O:
+                if (Keyboard.IsKeyDown(Key.LeftCtrl))
+                {
+                    var openFileDialog = new OpenFileDialog();
+                    var opened = openFileDialog.ShowDialog();
+                    if (opened != null && opened.Value)
+                    {
+                        LoadFile(openFileDialog.FileName);
+                        Draw();
+                    }
+                }
                 break;
         }
 
