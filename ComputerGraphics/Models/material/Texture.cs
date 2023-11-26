@@ -42,7 +42,7 @@ public class Texture
     public Vector3 GetPixel(float x, float y)
     {
         x -= MathF.Floor(x);
-        y -= MathF.Floor(x);
+        y -= MathF.Floor(y);
         return _colors[(int)(_bufferWidth * x), (int)(_bufferHeight * y)];
     }
 
