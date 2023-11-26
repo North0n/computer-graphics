@@ -102,7 +102,7 @@ public partial class MainWindow : INotifyPropertyChanged
         VertexTransformer.TransformNormals(_normals, _positions, _transformedNormals);
         var viewDirection = Vector3.Normalize(_positions.CameraTarget -
                               VertexTransformer.ToOrthogonal(_positions.CameraPosition, _positions.CameraTarget));
-        var bitmap = PainterService.DrawModel(_transformedVertexes, _worldVertexes, _transformedNormals, _triangles,
+        var bitmap = PainterService.DrawModel(_transformedVertexes, _worldVertexes, _transformedNormals, _textures, _triangles,
             (int)Grid.ActualWidth, (int)Grid.ActualHeight, _zBuffer, LightSources, viewDirection);
         PainterService.AddMinimapToBitmap(_positions, bitmap);
         Image.Source = bitmap.Source;

@@ -58,7 +58,7 @@ public static class PainterService
         }
     }
 
-    private static void DrawTriangle(IReadOnlyList<Vector4> vertexes, IReadOnlyList<Vector4> worldVertexes, IReadOnlyList<Vector3> normals,
+    private static void DrawTriangle(IReadOnlyList<Vector4> vertexes, IReadOnlyList<Vector4> worldVertexes, IReadOnlyList<Vector3> normals, IReadOnlyList<Vector3> textures,
         Bgra32Bitmap bitmap, float[,] zBuffer, LightSource[] lightSources, Vector3 viewDirection, Triangle triangle)
     {
         if (IsBackFace(vertexes, triangle))
@@ -115,8 +115,8 @@ public static class PainterService
 
                 var z = a.Z + p * (b.Z - a.Z);
 
-                var (red, green, blue) = GetPointColor(new Vector3(x, y, z), vertexes, normals, worldVertexes,
-                    lightSources, viewDirection, triangle);
+                var (red, green, blue) = ColorService.GetColor(new Vector3(x, y, z), vertexes, normals, textures,
+                    worldVertexes, lightSources, viewDirection, triangle);
                 var gotLock = false;
                 try
                 {
@@ -135,107 +135,9 @@ public static class PainterService
         }
     }
 
-    private static Vector3 AcesFilm(Vector3 color)
-    {
-        color = new(Vector3.Dot(new(0.59719f, 0.35458f, 0.04823f), color),
-            Vector3.Dot(new(0.07600f, 0.90834f, 0.01566f), color),
-            Vector3.Dot(new(0.02840f, 0.13383f, 0.83777f), color));
-
-        color = (color * (color + new Vector3(0.0245786f)) - new Vector3(0.000090537f)) /
-                (color * (0.983729f * color + new Vector3(0.4329510f)) + new Vector3(0.238081f));
-
-        color = new(Vector3.Dot(new(1.60475f, -0.53108f, -0.07367f), color),
-            Vector3.Dot(new(-0.10208f, 1.10813f, -0.00605f), color),
-            Vector3.Dot(new(-0.00327f, -0.07276f, 1.07602f), color));
-
-        return Vector3.Clamp(color, Vector3.Zero, Vector3.One);
-    }
-
-    private static Vector3 Pow(Vector3 color, float x)
-    {
-        return new Vector3(MathF.Pow(color.X, x), MathF.Pow(color.Y, x), MathF.Pow(color.Z, x));
-    }
-
-    private static Vector3 LinearToSrgb(Vector3 color)
-    {
-        static float LinearToSrgb(float c) =>
-            c <= 0.0031308f ? 12.92f * c : 1.055f * MathF.Pow(c, 1 / 2.4f) - 0.055f;
-
-        return new(LinearToSrgb(color.X), LinearToSrgb(color.Y), LinearToSrgb(color.Z));
-    }
-
-    private const float AmbientLightIntensity = 0.1f;
-    private static readonly Vector3 ModelAmbientConsumption = new(0.5f, 0.5f, 0.5f);
-    private static readonly Vector3 ModelColor = new(0.8f, 0.2f, 0.8f);
-
-    private static Vector3 GetDiffusePlusSpecular(LightSource lightSource, Vector3 worldPos,
-        Vector3 interpolatedNormal, Vector3 viewDirection)
-    {
-        var lightDirection = lightSource.Position - worldPos;
-        var lightDistSqr = lightDirection.LengthSquared();
-        var normLightDir = Vector3.Normalize(lightDirection);
-        var nDotL = Math.Max(0, Vector3.Dot(interpolatedNormal, normLightDir));
-        var irradiance = lightSource.Color * lightSource.Intensity * nDotL / lightDistSqr;
-        var diffuse = irradiance * ModelColor;
-        var rDotV = Math.Max(0, Vector3.Dot(viewDirection, Vector3.Reflect(normLightDir, interpolatedNormal)));
-        var specular = MathF.Pow(rDotV, 64) * ModelColor * irradiance;
-
-        return diffuse + specular;
-    }
-
-    private static Vector3 GetInterpolatedWorldVertex(IReadOnlyList<Vector4> vertexes, IReadOnlyList<Vector4> worldVertexes, int x, int y,
-        float z, Triangle triangle)
-    {
-        var v1 = vertexes[triangle.Indexes[0].Vertex];
-        var v2 = vertexes[triangle.Indexes[1].Vertex];
-        var v3 = vertexes[triangle.Indexes[2].Vertex];
-
-        var vx = new Vector3(v3.X - v1.X, v2.X - v1.X, v1.X - x);
-        var vy = new Vector3(v3.Y - v1.Y, v2.Y - v1.Y, v1.Y - y);
-
-        var k = Vector3.Cross(vx, vy);
-        var k1 = 1 - (k.X + k.Y) / k.Z;
-        var k2 = k.Y / k.Z;
-        var k3 = k.X / k.Z;
-
-        var kp1 = k1 / v1.Z * z;
-        var kp2 = k2 / v2.Z * z;
-        var kp3 = k3 / v3.Z * z;
-
-        var res = worldVertexes[triangle.Indexes[0].Vertex] * kp1 + worldVertexes[triangle.Indexes[1].Vertex] * kp2 + worldVertexes[triangle.Indexes[2].Vertex] * kp3;
-        return new Vector3(res.X, res.Y, res.Z);
-    }
-
-    private static (float R, float G, float B) GetPointColor(Vector3 point, IReadOnlyList<Vector4> vertexes, IReadOnlyList<Vector3> normals,
-        IReadOnlyList<Vector4> worldVertexes, LightSource[] lightSources, Vector3 viewDirection, Triangle triangle)
-    {
-        var a = new Vector3(vertexes[triangle.Indexes[0].Vertex].X, vertexes[triangle.Indexes[0].Vertex].Y, vertexes[triangle.Indexes[0].Vertex].Z);
-        var b = new Vector3(vertexes[triangle.Indexes[1].Vertex].X, vertexes[triangle.Indexes[1].Vertex].Y, vertexes[triangle.Indexes[1].Vertex].Z);
-        var c = new Vector3(vertexes[triangle.Indexes[2].Vertex].X, vertexes[triangle.Indexes[2].Vertex].Y, vertexes[triangle.Indexes[2].Vertex].Z);
-
-        var area = Vector3.Cross(b - a, c - a).Length();
-
-        var u = Vector3.Cross(c - b, point - b).Length() / area;
-        var v = Vector3.Cross(a - c, point - c).Length() / area;
-        var w = Vector3.Cross(b - a, point - a).Length() / area;
-
-        var worldPos = GetInterpolatedWorldVertex(vertexes, worldVertexes, (int)point.X, (int)point.Y, point.Z, triangle);
-        var interpolatedNormal = Vector3.Normalize(u * normals[triangle.Indexes[0].Normal] + v * normals[triangle.Indexes[1].Normal] + w * normals[triangle.Indexes[2].Normal]);
-        var ambient = AmbientLightIntensity * ModelAmbientConsumption * ModelColor;
-
-        var sum = lightSources.Aggregate(Vector3.Zero,
-            (current, lightSource) =>
-                current + GetDiffusePlusSpecular(lightSource, worldPos, interpolatedNormal, viewDirection));
-        var color = LinearToSrgb(AcesFilm(ambient + sum));
-
-        return (Math.Max(0, Math.Min(color.X, 1)),
-            Math.Max(0, Math.Min(color.Y, 1)),
-            Math.Max(0, Math.Min(color.Z, 1)))  ;
-    }
-
     public static Bgra32Bitmap DrawModel(Vector4[] vertexes, Vector4[] worldVertexes, Vector3[] normals,
-        List<Triangle> triangles, int width, int height, float[,] zBuffer, LightSource[] lightSources,
-        Vector3 viewDirection)
+        IReadOnlyList<Vector3> textures, List<Triangle> triangles, int width, int height, float[,] zBuffer,
+        LightSource[] lightSources, Vector3 viewDirection)
     {
         InitializeSpinLocks(width, height);
         
@@ -254,7 +156,8 @@ public static class PainterService
         {
             for (var j = range.Item1; j < range.Item2; ++j)
             {
-                DrawTriangle(vertexes, worldVertexes, normals, bitmap, zBuffer, lightSources, viewDirection, triangles[j]);
+                DrawTriangle(vertexes, worldVertexes, normals, textures, bitmap, zBuffer, lightSources, viewDirection,
+                    triangles[j]);
             }
         });
 
