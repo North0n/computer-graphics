@@ -135,19 +135,33 @@ public static class PainterService
         }
     }
 
-    private static Vector3 AcesFilm(Vector3 x)
+    private static Vector3 AcesFilm(Vector3 color)
     {
-        const float a = 2.51f;
-        Vector3 b = new(0.03f);
-        const float c = 2.43f;
-        Vector3 d = new(0.59f);
-        Vector3 e = new(0.14f);
-        return Vector3.Clamp((x * (a * x + b)) / (x * (c * x + d) + e), Vector3.Zero, Vector3.One);
+        color = new(Vector3.Dot(new(0.59719f, 0.35458f, 0.04823f), color),
+            Vector3.Dot(new(0.07600f, 0.90834f, 0.01566f), color),
+            Vector3.Dot(new(0.02840f, 0.13383f, 0.83777f), color));
+
+        color = (color * (color + new Vector3(0.0245786f)) - new Vector3(0.000090537f)) /
+                (color * (0.983729f * color + new Vector3(0.4329510f)) + new Vector3(0.238081f));
+
+        color = new(Vector3.Dot(new(1.60475f, -0.53108f, -0.07367f), color),
+            Vector3.Dot(new(-0.10208f, 1.10813f, -0.00605f), color),
+            Vector3.Dot(new(-0.00327f, -0.07276f, 1.07602f), color));
+
+        return Vector3.Clamp(color, Vector3.Zero, Vector3.One);
     }
 
     private static Vector3 Pow(Vector3 color, float x)
     {
         return new Vector3(MathF.Pow(color.X, x), MathF.Pow(color.Y, x), MathF.Pow(color.Z, x));
+    }
+
+    private static Vector3 LinearToSrgb(Vector3 color)
+    {
+        static float LinearToSrgb(float c) =>
+            c <= 0.0031308f ? 12.92f * c : 1.055f * MathF.Pow(c, 1 / 2.4f) - 0.055f;
+
+        return new(LinearToSrgb(color.X), LinearToSrgb(color.Y), LinearToSrgb(color.Z));
     }
 
     private static readonly Vector3 LightColor = new(1f, 1f, 1f);
