@@ -75,7 +75,7 @@ public partial class MainWindow : INotifyPropertyChanged
 
     private void OnWindowLoaded(object sender, RoutedEventArgs e)
     {
-        (_positions.Vertexes, _normals, _triangles) = ObjFileParser.Parse(File.ReadLines("amogus.obj"));
+        (_positions.Vertexes, _normals, _triangles) = ObjFileParser.Parse(File.ReadLines("Shovel Knight/shovel_low.obj"));
         _transformedVertexes = new Vector4[_positions.Vertexes.Count];
         _worldVertexes = new Vector4[_positions.Vertexes.Count];
         _transformedNormals = new Vector3[_normals.Count];

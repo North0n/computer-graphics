@@ -43,7 +43,7 @@ namespace ComputerGraphics.Services
 
             var translationMatrix = Matrix4x4.CreateTranslation(info.PositionX, info.PositionY, info.PositionZ);
             var rotationMatrix = Matrix4x4.CreateRotationX(info.RotationX) * Matrix4x4.CreateRotationY(info.RotationY);
-            var scaleMatrix = Matrix4x4.CreateScale(0.01f, 0.01f, 0.01f);
+            var scaleMatrix = Matrix4x4.CreateScale(0.1f, 0.1f, 0.1f);
 
             // TODO If cam is right above or below target, than it doesn't see target, because Vector3.Normalize(info.CameraTarget - info.CameraPosition) == -info.CamUp;
             // How to fix that?
