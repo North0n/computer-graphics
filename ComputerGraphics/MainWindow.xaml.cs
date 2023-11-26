@@ -177,6 +177,10 @@ public partial class MainWindow : INotifyPropertyChanged
                     }
                 }
                 break;
+            case Key.Q:
+            case Key.E:
+                LightSources[0].Intensity += (e.Key == Key.E ? 1 : -1) * 5;
+                break;
         }
 
         Draw();
