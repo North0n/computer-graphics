@@ -168,7 +168,10 @@ public partial class MainWindow : INotifyPropertyChanged
             case Key.O:
                 if (Keyboard.IsKeyDown(Key.LeftCtrl))
                 {
-                    var openFileDialog = new OpenFileDialog();
+                    var openFileDialog = new OpenFileDialog
+                    {
+                        Filter = "Object Files|*.obj"
+                    };
                     var opened = openFileDialog.ShowDialog();
                     if (opened != null && opened.Value)
                     {
