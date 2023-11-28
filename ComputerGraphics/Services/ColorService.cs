@@ -35,7 +35,10 @@ public static class ColorService
                 current + GetDiffusePlusSpecular(lightSource, worldPos.ToVector3(), normal, viewDirection,
                     material.DiffuseColor.GetValue(x, y), material.SpecularColor.GetValue(x, y),
                     material.SpecularPower));
-        var color = LinearToSrgb(AcesFilm(ambient + sum));
+        var linearColor = ambient + sum;
+        var keColor = material.KeColor.GetValue(x, y);
+        linearColor += keColor;
+        var color = LinearToSrgb(AcesFilm(linearColor));
 
         return (Math.Max(0, Math.Min(color.X, 1)),
             Math.Max(0, Math.Min(color.Y, 1)),

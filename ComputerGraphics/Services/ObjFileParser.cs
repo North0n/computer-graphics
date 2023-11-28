@@ -112,6 +112,7 @@ namespace ComputerGraphics.Services
             var ambientTexture = Material.DefaultAmbientTexture;
             var diffuseTexture = Material.DefaultDiffuseTexture;
             var specularTexture = Material.DefaultSpecularTexture;
+            var keTexture = Material.DefaultKeTexture;
             var normalTexture = Material.DefaultNormalTexture;
             var specularPower = Material.DefaultSpecularPower;
 
@@ -132,10 +133,12 @@ namespace ComputerGraphics.Services
                             MaterialPropertyFactory.CreateMaterialProperty(diffuseValue, diffuseTexture);
                         var specularProperty =
                             MaterialPropertyFactory.CreateMaterialProperty(specularValue, specularTexture);
+                        var keProperty =
+                            MaterialPropertyFactory.CreateMaterialProperty(Material.DefaultKeValue, keTexture);
                         var normalMap = normalTexture != null ? new NormalMap(normalTexture) : null;
 
                         materials[materialName] = new Material(ambientProperty, diffuseProperty, specularProperty,
-                            specularPower, normalMap);
+                            keProperty, specularPower, normalMap);
 
                         ambientValue = Material.DefaultAmbientValue;
                         diffuseValue = Material.DefaultDiffuseValue;
@@ -182,6 +185,10 @@ namespace ComputerGraphics.Services
                 {
                     normalTexture = ParseTexture(mtlPath, args[1]);
                 }
+                else if (args[0] == "map_Ke")
+                {
+                    keTexture = ParseTexture(mtlPath, args[1]);
+                }
             }
 
             // Add previous material
@@ -193,9 +200,11 @@ namespace ComputerGraphics.Services
                     MaterialPropertyFactory.CreateMaterialProperty(diffuseValue, diffuseTexture);
                 var specularProperty =
                     MaterialPropertyFactory.CreateMaterialProperty(specularValue, specularTexture);
+                var keProperty =
+                    MaterialPropertyFactory.CreateMaterialProperty(Material.DefaultKeValue, keTexture);
                 var normalMap = normalTexture != null ? new NormalMap(normalTexture) : null;
 
-                materials[materialName] = new Material(ambientProperty, diffuseProperty, specularProperty,
+                materials[materialName] = new Material(ambientProperty, diffuseProperty, specularProperty, keProperty,
                     specularPower, normalMap);
             }
 
