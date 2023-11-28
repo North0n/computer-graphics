@@ -17,9 +17,6 @@ public static class ColorService
         var worldPos = worldVertexes[triangle.Indexes[0].Vertex] * barycentric.X +
                        worldVertexes[triangle.Indexes[1].Vertex] * barycentric.Y +
                        worldVertexes[triangle.Indexes[2].Vertex] * barycentric.Z;
-        var normal = Vector3.Normalize(barycentric.X * normals[triangle.Indexes[0].Normal] +
-                                       barycentric.Y * normals[triangle.Indexes[1].Normal] +
-                                       barycentric.Z * normals[triangle.Indexes[2].Normal]);
         var texture = barycentric.X * textures[triangle.Indexes[0].Texture] +
                       barycentric.Y * textures[triangle.Indexes[1].Texture] +
                       barycentric.Z * textures[triangle.Indexes[2].Texture];
@@ -27,6 +24,10 @@ public static class ColorService
         var x = texture.X;
         var y = texture.Y;
         var material = triangle.Material;
+        var normal = material.NormalMap?.GetNormal(x, y) ?? Vector3.Normalize(
+            barycentric.X * normals[triangle.Indexes[0].Normal] +
+            barycentric.Y * normals[triangle.Indexes[1].Normal] +
+            barycentric.Z * normals[triangle.Indexes[2].Normal]);
 
         var ambient = AmbientLightIntensity * ModelAmbientConsumption * material.AmbientColor.GetValue(x, y);
         var sum = lightSources.Aggregate(Vector3.Zero,

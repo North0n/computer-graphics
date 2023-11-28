@@ -38,6 +38,6 @@ public class Material
         DiffuseColor = MaterialPropertyFactory.CreateMaterialProperty(DefaultDiffuseValue, DefaultDiffuseTexture);
         SpecularColor = MaterialPropertyFactory.CreateMaterialProperty(DefaultSpecularValue, DefaultSpecularTexture);
         SpecularPower = DefaultSpecularPower;
-        NormalMap = NormalMapFactory.CreateNormalMap(DefaultNormalTexture);
+        NormalMap = null;
     }
 }

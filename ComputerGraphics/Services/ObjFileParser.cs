@@ -132,7 +132,7 @@ namespace ComputerGraphics.Services
                             MaterialPropertyFactory.CreateMaterialProperty(diffuseValue, diffuseTexture);
                         var specularProperty =
                             MaterialPropertyFactory.CreateMaterialProperty(specularValue, specularTexture);
-                        var normalMap = NormalMapFactory.CreateNormalMap(normalTexture);
+                        var normalMap = normalTexture != null ? new NormalMap(normalTexture) : null;
 
                         materials[materialName] = new Material(ambientProperty, diffuseProperty, specularProperty,
                             specularPower, normalMap);
@@ -178,7 +178,7 @@ namespace ComputerGraphics.Services
                 {
                     specularTexture = ParseTexture(mtlPath, args[1]);
                 }
-                else if (args[0] == "map_bump" || args[0] == "bump")
+                else if (args[0] == "map_bump" || args[0] == "bump" || args[0] == "norm")
                 {
                     normalTexture = ParseTexture(mtlPath, args[1]);
                 }
@@ -193,7 +193,7 @@ namespace ComputerGraphics.Services
                     MaterialPropertyFactory.CreateMaterialProperty(diffuseValue, diffuseTexture);
                 var specularProperty =
                     MaterialPropertyFactory.CreateMaterialProperty(specularValue, specularTexture);
-                var normalMap = NormalMapFactory.CreateNormalMap(normalTexture);
+                var normalMap = normalTexture != null ? new NormalMap(normalTexture) : null;
 
                 materials[materialName] = new Material(ambientProperty, diffuseProperty, specularProperty,
                     specularPower, normalMap);
