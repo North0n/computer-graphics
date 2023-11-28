@@ -19,7 +19,7 @@ public partial class MainWindow : INotifyPropertyChanged
 {
     private readonly ImageInfo _positions = new()
     {
-        PositionZ = 0, CameraTarget = new Vector3(0, 0, 0), CameraPosition = new Vector3(12, (float)Math.PI, 0),
+        PositionZ = 0, CameraTarget = new Vector3(0, 0, 0), CameraPosition = new Vector3(4, (float)Math.PI, 0),
         CamUp = new Vector3(0, 1, 0)
     };
 
@@ -91,7 +91,7 @@ public partial class MainWindow : INotifyPropertyChanged
     private const float CoeffD = 2;
 
     private static readonly LightSource[] LightSources = {
-        new(Vector3.Zero, new(1f, 1f, 1f), 50f),
+        new(Vector3.Zero, new(1f, 1f, 1f), 20f),
         // new(new(CoeffD, -CoeffY, CoeffD), new(1, 0, 0), 80f),
         // new(new(-CoeffD, -CoeffY, CoeffD), new(0, 1, 0), 80f),
         // new(new(CoeffD, -CoeffY, -CoeffD), new(0, 0, 1), 80f),
@@ -179,7 +179,7 @@ public partial class MainWindow : INotifyPropertyChanged
                 break;
             case Key.Q:
             case Key.E:
-                LightSources[0].Intensity += (e.Key == Key.E ? 1 : -1) * 5;
+                LightSources[0].Intensity += (e.Key == Key.E ? 1 : -1) * 1;
                 break;
         }
 
@@ -194,7 +194,7 @@ public partial class MainWindow : INotifyPropertyChanged
         var position = e.GetPosition(Image);
         if (e.MiddleButton == MouseButtonState.Pressed)
         {
-            var yOffset = (float)((position.Y - _pressPoint.Y) * 0.002);
+            var yOffset = (float)((position.Y - _pressPoint.Y) * 0.001);
             _positions.CameraTarget = _positions.CameraTarget with
             {
                 Y = _positions.CameraTarget.Y + yOffset
@@ -230,7 +230,7 @@ public partial class MainWindow : INotifyPropertyChanged
 
     private void OnMouseWheel(object sender, MouseWheelEventArgs e)
     {
-        _positions.CameraPosition = _positions.CameraPosition with { X = _positions.CameraPosition.X - 0.005f * e.Delta };
+        _positions.CameraPosition = _positions.CameraPosition with { X = _positions.CameraPosition.X - 0.001f * e.Delta };
         Draw();
     }
 }
