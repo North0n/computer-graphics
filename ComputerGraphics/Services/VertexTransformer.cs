@@ -61,6 +61,7 @@ namespace ComputerGraphics.Services
                 {
                     worldVertexes[i] = Vector4.Transform(info.Vertexes[i], toWorld);
                     resultVertexes[i] = Vector4.Transform(worldVertexes[i], viewMatrix * projectionMatrix);
+                    worldVertexes[i].W = resultVertexes[i].W;
                     resultVertexes[i] /= resultVertexes[i].W;
                     resultVertexes[i] = Vector4.Transform(resultVertexes[i], viewPortMatrix);
                 }

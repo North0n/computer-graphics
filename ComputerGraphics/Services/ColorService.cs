@@ -17,9 +17,13 @@ public static class ColorService
         var worldPos = worldVertexes[triangle.Indexes[0].Vertex] * barycentric.X +
                        worldVertexes[triangle.Indexes[1].Vertex] * barycentric.Y +
                        worldVertexes[triangle.Indexes[2].Vertex] * barycentric.Z;
-        var texture = barycentric.X * textures[triangle.Indexes[0].Texture] +
-                      barycentric.Y * textures[triangle.Indexes[1].Texture] +
-                      barycentric.Z * textures[triangle.Indexes[2].Texture];
+        var texture = barycentric.X * textures[triangle.Indexes[0].Texture] / worldVertexes[triangle.Indexes[0].Vertex].W +
+                      barycentric.Y * textures[triangle.Indexes[1].Texture] / worldVertexes[triangle.Indexes[1].Vertex].W +
+                      barycentric.Z * textures[triangle.Indexes[2].Texture] / worldVertexes[triangle.Indexes[2].Vertex].W;
+        var interpolatedOppositeDepth = barycentric.X / worldVertexes[triangle.Indexes[0].Vertex].W +
+                                        barycentric.Y / worldVertexes[triangle.Indexes[1].Vertex].W +
+                                        barycentric.Z / worldVertexes[triangle.Indexes[2].Vertex].W;
+        texture /= interpolatedOppositeDepth;
 
         var x = texture.X;
         var y = texture.Y;

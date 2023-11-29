@@ -43,7 +43,8 @@ public class Texture
     {
         x -= MathF.Floor(x);
         y -= MathF.Floor(y);
-        return _colors[(int)(_bufferWidth * x), (int)(_bufferHeight * y)];
+        return _colors[Math.Min((int)(_bufferWidth * x), _bufferWidth - 1),
+            Math.Min((int)(_bufferHeight * y), _bufferHeight - 1)];
     }
 
     private static PixelFormat PixelFormat(IImage image) =>
