@@ -28,13 +28,14 @@ public static class ColorService
             barycentric.X * normals[triangle.Indexes[0].Normal] +
             barycentric.Y * normals[triangle.Indexes[1].Normal] +
             barycentric.Z * normals[triangle.Indexes[2].Normal]);
+        var mrao = material.MRAOColor.GetValue(x, y);
 
         var ambient = AmbientLightIntensity * ModelAmbientConsumption * material.AmbientColor.GetValue(x, y);
         var sum = lightSources.Aggregate(Vector3.Zero,
             (current, lightSource) =>
                 current + GetDiffusePlusSpecular(lightSource, worldPos.ToVector3(), normal, viewDirection,
                     material.DiffuseColor.GetValue(x, y), material.SpecularColor.GetValue(x, y),
-                    material.SpecularPower));
+                    material.SpecularPower, mrao));
         var linearColor = ambient + sum;
         var keColor = material.KeColor.GetValue(x, y);
         linearColor += keColor;
@@ -78,14 +79,17 @@ public static class ColorService
     private static readonly Vector3 ModelAmbientConsumption = new(0.5f, 0.5f, 0.5f);
 
     private static Vector3 GetDiffusePlusSpecular(LightSource lightSource, Vector3 worldPos,
-        Vector3 interpolatedNormal, Vector3 viewDirection, Vector3 diffuseColor, Vector3 specularColor, float specularPower)
+        Vector3 interpolatedNormal, Vector3 viewDirection, Vector3 diffuseColor, Vector3 specularColor,
+        float specularPower, Vector3 mrao)
     {
+        var metalness = mrao.X;
+
         var lightDirection = lightSource.Position - worldPos;
         var lightDistSqr = lightDirection.LengthSquared();
         var normLightDir = Vector3.Normalize(lightDirection);
         var nDotL = Math.Max(0, Vector3.Dot(interpolatedNormal, normLightDir));
         var irradiance = lightSource.Color * lightSource.Intensity * nDotL / lightDistSqr;
-        var diffuse = irradiance * diffuseColor;
+        var diffuse = irradiance * diffuseColor * (1.0f - metalness);
         var rDotV = Math.Max(0, Vector3.Dot(viewDirection, Vector3.Reflect(normLightDir, interpolatedNormal)));
         var specular = MathF.Pow(rDotV, specularPower) * specularColor * irradiance;
 
