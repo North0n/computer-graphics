@@ -125,18 +125,6 @@ public partial class MainWindow : INotifyPropertyChanged
     {
         switch (e.Key)
         {
-            case Key.Left:
-                _positions.RotationY -= RotationSpeed;
-                break;
-            case Key.Right:
-                _positions.RotationY += RotationSpeed;
-                break;
-            case Key.Up:
-                _positions.RotationX -= RotationSpeed;
-                break;
-            case Key.Down:
-                _positions.RotationX += RotationSpeed;
-                break;
             case Key.W:
                 _positions.PositionZ += MoveSpeed;
                 _positions.CameraTarget = _positions.CameraTarget with
