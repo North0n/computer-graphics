@@ -13,17 +13,13 @@ public static class ColorService
         IReadOnlyList<Vector3> normals, IReadOnlyList<Vector3> textures, IReadOnlyList<Vector4> worldVertexes,
         IEnumerable<LightSource> lightSources, Vector3 viewDirection, Triangle triangle)
     {
-        var barycentric = GetBarycentricCoordinates(vertexes, (int)point.X, (int)point.Y, point.Z, triangle);
+        var barycentric = GetBarycentricCoordinates(vertexes, worldVertexes, (int)point.X, (int)point.Y, point.Z, triangle);
         var worldPos = worldVertexes[triangle.Indexes[0].Vertex] * barycentric.X +
                        worldVertexes[triangle.Indexes[1].Vertex] * barycentric.Y +
                        worldVertexes[triangle.Indexes[2].Vertex] * barycentric.Z;
-        var texture = barycentric.X * textures[triangle.Indexes[0].Texture] / worldVertexes[triangle.Indexes[0].Vertex].W +
-                      barycentric.Y * textures[triangle.Indexes[1].Texture] / worldVertexes[triangle.Indexes[1].Vertex].W +
-                      barycentric.Z * textures[triangle.Indexes[2].Texture] / worldVertexes[triangle.Indexes[2].Vertex].W;
-        var interpolatedOppositeDepth = barycentric.X / worldVertexes[triangle.Indexes[0].Vertex].W +
-                                        barycentric.Y / worldVertexes[triangle.Indexes[1].Vertex].W +
-                                        barycentric.Z / worldVertexes[triangle.Indexes[2].Vertex].W;
-        texture /= interpolatedOppositeDepth;
+        var texture = barycentric.X * textures[triangle.Indexes[0].Texture] +
+                      barycentric.Y * textures[triangle.Indexes[1].Texture] +
+                      barycentric.Z * textures[triangle.Indexes[2].Texture];
 
         var x = texture.X;
         var y = texture.Y;
@@ -93,12 +89,15 @@ public static class ColorService
         return diffuse + specular;
     }
 
-    private static Vector3 GetBarycentricCoordinates(IReadOnlyList<Vector4> vertexes, int x, int y, float z,
-        Triangle triangle)
+    private static Vector3 GetBarycentricCoordinates(IReadOnlyList<Vector4> vertexes,
+        IReadOnlyList<Vector4> worldVertexes, int x, int y, float z, Triangle triangle)
     {
         var v1 = vertexes[triangle.Indexes[0].Vertex];
         var v2 = vertexes[triangle.Indexes[1].Vertex];
         var v3 = vertexes[triangle.Indexes[2].Vertex];
+        var wv1 = worldVertexes[triangle.Indexes[0].Vertex];
+        var wv2 = worldVertexes[triangle.Indexes[1].Vertex];
+        var wv3 = worldVertexes[triangle.Indexes[2].Vertex];
 
         var vx = new Vector3(v3.X - v1.X, v2.X - v1.X, v1.X - x);
         var vy = new Vector3(v3.Y - v1.Y, v2.Y - v1.Y, v1.Y - y);
@@ -106,13 +105,16 @@ public static class ColorService
         var k = Vector3.Cross(vx, vy);
         if (k.Z == 0)
             k.Z = 1;
-        var k1 = 1 - (k.X + k.Y) / k.Z;
-        var k2 = k.Y / k.Z;
-        var k3 = k.X / k.Z;
+        var k1 = (1 - (k.X + k.Y) / k.Z) / wv1.W;
+        var k2 = k.Y / k.Z / wv2.W;
+        var k3 = k.X / k.Z / wv3.W;
 
-        var kp1 = k1 / v1.Z * z;
-        var kp2 = k2 / v2.Z * z;
-        var kp3 = k3 / v3.Z * z;
+        var kSum = k1 + k2 + k3;
+        var z0 = 1 / (kSum == 0 ? 1 : kSum);
+
+        var kp1 = k1 * z0;
+        var kp2 = k2 * z0;
+        var kp3 = k3 * z0;
 
         return new Vector3(kp1, kp2, kp3);
     }
