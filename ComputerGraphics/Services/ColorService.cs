@@ -34,7 +34,8 @@ public static class ColorService
         var sum = lightSources.Aggregate(Vector3.Zero,
             (current, lightSource) =>
                 current + GetDiffusePlusSpecular(lightSource, worldPos.ToVector3(), normal, viewDirection,
-                    material.DiffuseColor.GetValue(x, y), material.SpecularColor.GetValue(x, y),
+                    SrgbToLinear(material.DiffuseColor.GetValue(x, y)),
+                    SrgbToLinear(material.SpecularColor.GetValue(x, y)),
                     material.SpecularPower, mrao));
         var linearColor = ambient + sum;
         var keColor = material.KeColor.GetValue(x, y);
@@ -75,7 +76,14 @@ public static class ColorService
         return new(LinearToSrgb(color.X), LinearToSrgb(color.Y), LinearToSrgb(color.Z));
     }
 
-    private const float AmbientLightIntensity = 0.1f;
+    private static Vector3 SrgbToLinear(Vector3 color)
+    {
+        static float SrgbToLinear(float c) =>
+            c <= 0.04045f ? c / 12.92f : MathF.Pow((c + 0.055f) / 1.055f, 2.4f);
+
+        return new(SrgbToLinear(color.X), SrgbToLinear(color.Y), SrgbToLinear(color.Z));
+    }
+
     private const float AmbientLightIntensity = 0.01f;
     private static readonly Vector3 ModelAmbientConsumption = new(0.5f, 0.5f, 0.5f);
 
