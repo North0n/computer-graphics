@@ -38,7 +38,7 @@ public static class ColorService
                     material.SpecularPower, mrao));
         var linearColor = ambient + sum;
         var keColor = material.KeColor.GetValue(x, y);
-        linearColor += keColor;
+        linearColor += 10 * keColor;
         var color = LinearToSrgb(AcesFilm(linearColor));
 
         return (Math.Max(0, Math.Min(color.X, 1)),
@@ -76,6 +76,7 @@ public static class ColorService
     }
 
     private const float AmbientLightIntensity = 0.1f;
+    private const float AmbientLightIntensity = 0.01f;
     private static readonly Vector3 ModelAmbientConsumption = new(0.5f, 0.5f, 0.5f);
 
     private static Vector3 GetDiffusePlusSpecular(LightSource lightSource, Vector3 worldPos,
