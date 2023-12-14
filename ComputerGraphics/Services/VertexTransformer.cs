@@ -45,7 +45,8 @@ namespace ComputerGraphics.Services
             var rotationMatrix = Matrix4x4.CreateRotationX(info.RotationX) * Matrix4x4.CreateRotationY(info.RotationY);
             var scaleMatrix = Matrix4x4.CreateScale(0.1f, 0.1f, 0.1f);
 
-            // TODO If cam is right above or below target, than it doesn't see target, because Vector3.Normalize(info.CameraTarget - info.CameraPosition) == -info.CamUp;
+            // TODO If cam is right above or below target, tha
+            // n it doesn't see target, because Vector3.Normalize(info.CameraTarget - info.CameraPosition) == -info.CamUp;
             // How to fix that?
             var viewMatrix = Matrix4x4.CreateLookAt(ToOrthogonal(info.CameraPosition, info.CameraTarget),
                 info.CameraTarget, info.CamUp);

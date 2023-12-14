@@ -70,3 +70,4 @@ Build.props
 
 .data/
 docker-compose.override.yml
+Models/

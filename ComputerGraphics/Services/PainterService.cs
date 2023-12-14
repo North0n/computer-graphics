@@ -115,14 +115,24 @@ public static class PainterService
 
                 var z = a.Z + p * (b.Z - a.Z);
 
-                var (red, green, blue) = ColorService.GetColor(new Vector3(x, y, z), vertexes, normals, textures,
-                    worldVertexes, lightSources, viewDirection, triangle);
+                
                 var gotLock = false;
                 try
                 {
                     _spinLocks[x][y].Enter(ref gotLock);
                     if (zBuffer[x, y] > z)
                     {
+                        var (red, green, blue) = ColorService.GetColor(
+                            new Vector3(x, y, z),
+                            vertexes,
+                            normals,
+                            textures,
+                            worldVertexes,
+                            lightSources,
+                            viewDirection,
+                            triangle
+                        );
+
                         zBuffer[x, y] = z;
                         bitmap.SetPixel(x, y, red, green, blue);
                     }
@@ -160,6 +170,21 @@ public static class PainterService
                     triangles[j]);
             }
         });
+
+        //for (var j = 0; j < triangles.Count; ++j)
+        //{
+        //    DrawTriangle(
+        //        vertexes,
+        //        worldVertexes,
+        //        normals,
+        //        textures,
+        //        bitmap,
+        //        zBuffer,
+        //        lightSources,
+        //        viewDirection,
+        //        triangles[j]
+        //    );
+        //}
 
         bitmap.Source.AddDirtyRect(new Int32Rect(0, 0, bitmap.PixelWidth, bitmap.PixelHeight));
         bitmap.Source.Unlock();

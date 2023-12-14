@@ -9,6 +9,8 @@ namespace ComputerGraphics.Services;
 
 public static class ColorService
 {
+    private static readonly Vector3 AmbientWeight = new(0.1f);
+
     public static (float R, float G, float B) GetColor(Vector3 point, IReadOnlyList<Vector4> vertexes,
         IReadOnlyList<Vector3> normals, IReadOnlyList<Vector3> textures, IReadOnlyList<Vector4> worldVertexes,
         IEnumerable<LightSource> lightSources, Vector3 viewDirection, Triangle triangle)
@@ -28,18 +30,27 @@ public static class ColorService
             barycentric.X * normals[triangle.Indexes[0].Normal] +
             barycentric.Y * normals[triangle.Indexes[1].Normal] +
             barycentric.Z * normals[triangle.Indexes[2].Normal]);
-        var mrao = material.MRAOColor.GetValue(x, y);
 
-        var ambient = AmbientLightIntensity * ModelAmbientConsumption * material.AmbientColor.GetValue(x, y);
-        var sum = lightSources.Aggregate(Vector3.Zero,
-            (current, lightSource) =>
-                current + GetDiffusePlusSpecular(lightSource, worldPos.ToVector3(), normal, viewDirection,
-                    SrgbToLinear(material.DiffuseColor.GetValue(x, y)),
-                    SrgbToLinear(material.SpecularColor.GetValue(x, y)),
-                    material.SpecularPower, mrao));
-        var linearColor = ambient + sum;
-        var keColor = material.KeColor.GetValue(x, y);
-        linearColor += 10 * keColor;
+        var albedo = SrgbToLinear(material.DiffuseColor.GetValue(x, y));
+        var emissivity = SrgbToLinear(material.Emissivity.GetValue(x, y));
+        var mrao = material.MRAOColor.GetValue(x, y);
+        
+        var ambient = AmbientWeight * albedo * mrao.Z;
+
+        var sum = lightSources.Aggregate(
+            Vector3.Zero,
+            (current, lightSource) => current + GetPhysicallyBasedRenderingLight(
+                lightSource,
+                viewDirection,
+                normal,
+                worldPos.ToVector3(),
+                mrao,
+                albedo
+            )
+        );
+
+        var linearColor = ambient + sum + emissivity * 10;
+        
         var color = LinearToSrgb(AcesFilm(linearColor));
 
         return (Math.Max(0, Math.Min(color.X, 1)),
@@ -63,11 +74,6 @@ public static class ColorService
         return Vector3.Clamp(color, Vector3.Zero, Vector3.One);
     }
 
-    private static Vector3 Pow(Vector3 color, float x)
-    {
-        return new Vector3(MathF.Pow(color.X, x), MathF.Pow(color.Y, x), MathF.Pow(color.Z, x));
-    }
-
     private static Vector3 LinearToSrgb(Vector3 color)
     {
         static float LinearToSrgb(float c) =>
@@ -84,25 +90,73 @@ public static class ColorService
         return new(SrgbToLinear(color.X), SrgbToLinear(color.Y), SrgbToLinear(color.Z));
     }
 
-    private const float AmbientLightIntensity = 0.01f;
-    private static readonly Vector3 ModelAmbientConsumption = new(0.5f, 0.5f, 0.5f);
-
-    private static Vector3 GetDiffusePlusSpecular(LightSource lightSource, Vector3 worldPos,
-        Vector3 interpolatedNormal, Vector3 viewDirection, Vector3 diffuseColor, Vector3 specularColor,
-        float specularPower, Vector3 mrao)
+    private static Vector3 GetPhysicallyBasedRenderingLight(LightSource lightSource, Vector3 viewDirection,
+        Vector3 normal, Vector3 worldPos, Vector3 mrao, Vector3 albedo)
     {
-        var metalness = mrao.X;
+        var distance = Vector3.Distance(worldPos, lightSource.Position);
+        var lightDirection = Vector3.Normalize(lightSource.Position - worldPos);
+        var halfwayVector = Vector3.Normalize(viewDirection + lightDirection);
+        var attenuation = 1.0f / (distance * distance);
 
-        var lightDirection = lightSource.Position - worldPos;
-        var lightDistSqr = lightDirection.LengthSquared();
-        var normLightDir = Vector3.Normalize(lightDirection);
-        var nDotL = Math.Max(0, Vector3.Dot(interpolatedNormal, normLightDir));
-        var irradiance = lightSource.Color * lightSource.Intensity * nDotL / lightDistSqr;
-        var diffuse = irradiance * diffuseColor * (1.0f - metalness);
-        var rDotV = Math.Max(0, Vector3.Dot(viewDirection, Vector3.Reflect(normLightDir, interpolatedNormal)));
-        var specular = MathF.Pow(rDotV, specularPower) * specularColor * irradiance;
+        var metallic = mrao.X;
+        var roughness = mrao.Y;
 
-        return diffuse + specular;
+        var nDotH = MathF.Max(Vector3.Dot(normal, halfwayVector), 1e-10f);
+        var nDotV = MathF.Max(Vector3.Dot(normal, viewDirection), 1e-10f);
+        var nDotL = MathF.Max(Vector3.Dot(normal, lightDirection), 1e-10f);
+
+        var f0 = Vector3.Lerp(new Vector3(0.04f), albedo, metallic);
+
+        var lambert = albedo / MathF.PI;
+
+        // Cook-Torrance
+        var d = D_GGX(roughness, nDotH);
+        var g = G_Smith(nDotV, nDotL, roughness);
+        var f = F_Schlick(nDotV, f0);
+
+        var ks = f;
+        var kd = (Vector3.One - ks) * (1 - metallic);
+
+        Vector3 cookTorranceNumerator = d * g * f;
+        float cookTorranceDenominator = 4.0f * nDotV * nDotL;
+
+        Vector3 cookTorrance = cookTorranceNumerator / cookTorranceDenominator;
+        Vector3 brdf = kd * lambert + cookTorrance;
+
+        Vector3 result = brdf * lightSource.Color * lightSource.Intensity * nDotL * attenuation;
+
+        return result;
+    }
+
+    private static Vector3 F_Schlick(float hDotV, Vector3 f0)
+    {
+        return f0 + (Vector3.One - f0) * MathF.Pow(1 - hDotV, 5);
+    }
+
+    // Smith Model
+    private static float G_Smith(float nDotV, float nDotL, float roughness)
+    {
+        var k = (float)Math.Pow(roughness, 2) / 2;
+
+        return GetFactor(nDotV, k) * GetFactor(nDotL, k);
+    }
+
+    // GGX/Trowbridge-Reitz Normal Distribution Function
+    private static float D_GGX(float roughness, float nDotH)
+    {
+        var a2 = (float)Math.Pow(roughness, 4);
+
+        var denominator = nDotH * nDotH * (a2 - 1.0f) + 1.0f;
+        denominator = Math.Max(MathF.PI * denominator * denominator, 1e-12f);
+
+        return a2 / denominator;
+    }
+
+    // Schlick-Beckman Geometry Shadowing Function
+    private static float GetFactor(float dot, float k)
+    {
+        var denominator = MathF.Max(1e-10f, dot * (1 - k) + k);
+        return dot / denominator;
     }
 
     private static Vector3 GetBarycentricCoordinates(IReadOnlyList<Vector4> vertexes,

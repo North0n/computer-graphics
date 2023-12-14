@@ -112,7 +112,7 @@ namespace ComputerGraphics.Services
             var ambientTexture = Material.DefaultAmbientTexture;
             var diffuseTexture = Material.DefaultDiffuseTexture;
             var specularTexture = Material.DefaultSpecularTexture;
-            var keTexture = Material.DefaultKeTexture;
+            var emissivityTexture = Material.DefaultEmissivityTexture;
             var mraoTexture = Material.DefaultMRAOTexture;
             var normalTexture = Material.DefaultNormalTexture;
             var specularPower = Material.DefaultSpecularPower;
@@ -134,14 +134,14 @@ namespace ComputerGraphics.Services
                             MaterialPropertyFactory.CreateMaterialProperty(diffuseValue, diffuseTexture);
                         var specularProperty =
                             MaterialPropertyFactory.CreateMaterialProperty(specularValue, specularTexture);
-                        var keProperty =
-                            MaterialPropertyFactory.CreateMaterialProperty(Material.DefaultKeValue, keTexture);
+                        var emissivity =
+                            MaterialPropertyFactory.CreateMaterialProperty(Material.DefaultEmissivity, emissivityTexture);
                         var mraoProperty =
                             MaterialPropertyFactory.CreateMaterialProperty(Material.DefaultMRAOValue, mraoTexture);
                         var normalMap = normalTexture != null ? new NormalMap(normalTexture) : null;
 
                         materials[materialName] = new Material(ambientProperty, diffuseProperty, specularProperty,
-                            keProperty, mraoProperty, specularPower, normalMap);
+                            emissivity, mraoProperty, specularPower, normalMap);
 
                         ambientValue = Material.DefaultAmbientValue;
                         diffuseValue = Material.DefaultDiffuseValue;
@@ -190,7 +190,7 @@ namespace ComputerGraphics.Services
                 }
                 else if (args[0] == "map_Ke")
                 {
-                    keTexture = ParseTexture(mtlPath, args[1]);
+                    emissivityTexture = ParseTexture(mtlPath, args[1]);
                 }
                 else if (args[0] == "map_MRAO")
                 {
@@ -208,7 +208,7 @@ namespace ComputerGraphics.Services
                 var specularProperty =
                     MaterialPropertyFactory.CreateMaterialProperty(specularValue, specularTexture);
                 var keProperty =
-                    MaterialPropertyFactory.CreateMaterialProperty(Material.DefaultKeValue, keTexture);
+                    MaterialPropertyFactory.CreateMaterialProperty(Material.DefaultEmissivity, emissivityTexture);
                 var mraoProperty =
                     MaterialPropertyFactory.CreateMaterialProperty(Material.DefaultMRAOValue, mraoTexture);
                 var normalMap = normalTexture != null ? new NormalMap(normalTexture) : null;

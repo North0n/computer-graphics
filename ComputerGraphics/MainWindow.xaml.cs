@@ -19,7 +19,10 @@ public partial class MainWindow : INotifyPropertyChanged
 {
     private readonly ImageInfo _positions = new()
     {
-        PositionZ = 0, CameraTarget = new Vector3(0, 0, 0), CameraPosition = new Vector3(4, (float)Math.PI, 0),
+        PositionZ = 0,
+        CameraTarget = new Vector3(0, 0, 0),
+        CameraPosition = new Vector3(4, (float)Math.PI, 0),
+        //CameraPosition = new Vector3(0, 0, 0.2f),
         CamUp = new Vector3(0, 1, 0)
     };
 
@@ -88,14 +91,19 @@ public partial class MainWindow : INotifyPropertyChanged
     }
 
     private const float CoeffY = -4;
-    private const float CoeffD = 2;
+    private const float CoeffD = 4;
 
     private static readonly LightSource[] LightSources = {
         new(Vector3.Zero, new(1f, 1f, 1f), 20f),
-        // new(new(CoeffD, -CoeffY, CoeffD), new(1, 0, 0), 80f),
-        // new(new(-CoeffD, -CoeffY, CoeffD), new(0, 1, 0), 80f),
-        // new(new(CoeffD, -CoeffY, -CoeffD), new(0, 0, 1), 80f),
-        // new(new(-CoeffD, -CoeffY, -CoeffD), new(1, 1, 1), 80f),
+        //new(new(CoeffD, -CoeffY, CoeffD), new(1, 1, 1), 5f),
+        //new(new(-CoeffD, -CoeffY, CoeffD), new(1, 1, 1), 5f),
+        //new(new(CoeffD, -CoeffY, -CoeffD), new(1, 1, 1), 5f),
+        //new(new(-CoeffD, -CoeffY, -CoeffD), new(1, 1, 1), 5f),
+        //new(new(50, 50, 50), new (1f, 1f, 1f), 1000),
+        //new(new(0, 0, 2), new Vector3(1f, 1f, 1f), 5f),
+        //new(new(-50, 50, 50), new (1f, 1f, 1f), 3000),
+        //new(new(50, 50, -50), new (1f, 1f, 1f), 50),
+        //new(new(-50, 50, -50), new (1f, 1f, 1f), 50),
     };
 
     private void Draw()
@@ -106,8 +114,9 @@ public partial class MainWindow : INotifyPropertyChanged
 
         VertexTransformer.TransformVertexes(_positions, Grid.ActualWidth, Grid.ActualHeight, _transformedVertexes, _worldVertexes);
         VertexTransformer.TransformNormals(_normals, _positions, _transformedNormals);
-        var viewDirection = Vector3.Normalize(_positions.CameraTarget -
+        var viewDirection = -Vector3.Normalize(_positions.CameraTarget -
                               VertexTransformer.ToOrthogonal(_positions.CameraPosition, _positions.CameraTarget));
+        //var viewDirection = Vector3.Normalize(_positions.CameraPosition - _positions.CameraTarget);
         var bitmap = PainterService.DrawModel(_transformedVertexes, _worldVertexes, _transformedNormals, _textures, _triangles,
             (int)Grid.ActualWidth, (int)Grid.ActualHeight, _zBuffer, LightSources, viewDirection);
         PainterService.AddMinimapToBitmap(_positions, bitmap);
